@@ -1,6 +1,7 @@
 // Browser commands → server actions. Names match OfficeDataSource methods.
 
 import { SERVICE_KEYS, type AgentCli, type AgentConfig, type AgentPatch, type ReviewTool, type WelcomeInput, type NewMcpServer, type Board, type NewAgentInput, type ProjectConfig, type RemoveAgentOptions, type SandboxSettings, type SetupCheckId, type WorkflowPatch } from "../src/data/types";
+import { LEAD_NAME, OFFICE_NAME_MAX } from "../src/data/names";
 import { STACK_CATEGORIES, stackSkills, stackTool, type StackChoice, type StackConfig } from "../src/data/stack";
 import { resolveAccess } from "./access";
 import { ensureSkillCache } from "./skills";
@@ -249,7 +250,7 @@ export function makeCommands(hub: Hub, sessions: Sessions, planner: Planner, inb
         agent.cli = agentCli;
         return agent;
       };
-      const lead = make(input.lead?.name ?? "John", "Lead", cli(input.lead?.cli), true);
+      const lead = make(input.lead?.name ?? LEAD_NAME, "Lead", cli(input.lead?.cli), true);
       const workers = (Array.isArray(input.workers) ? input.workers : []).slice(0, 11).map((w) => make(w?.name ?? "", w?.role ?? "", cli(w?.cli), false));
       if (!workers.length) return hub.activity("config", null, "Add at least one worker to the team.");
       const cfg = hub.snap.config;
@@ -288,6 +289,11 @@ export function makeCommands(hub: Hub, sessions: Sessions, planner: Planner, inb
       const project = hub.snap.config.project;
       if (typeof p.name === "string" && p.name.trim()) project.name = str(p.name, 80);
       if (typeof p.repo === "string" && p.repo.trim()) project.repo = str(p.repo, 200);
+      if (typeof p.officeName === "string") {
+        const name = p.officeName.trim().slice(0, OFFICE_NAME_MAX);
+        if (name) project.officeName = name;
+        else delete project.officeName;
+      }
       const exportOn = typeof p.exportPlan === "boolean" && p.exportPlan && !project.exportPlan;
       if (typeof p.exportPlan === "boolean") project.exportPlan = p.exportPlan;
       hub.configChanged();

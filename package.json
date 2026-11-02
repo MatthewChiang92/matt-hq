@@ -1,6 +1,6 @@
 {
   "name": "@therealjsmastery/jsm-hq",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "A pixel office where you run a team of AI coding agents (Claude Code, Codex) in Docker Sandboxes.",
   "license": "MIT",
   "type": "module",
@@ -50,6 +50,8 @@
     "postinstall": "node scripts/fix-node-pty.mjs"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
     "@lydell/node-pty": "1.2.0-beta.15",
     "@modelcontextprotocol/sdk": "^1.32.1",
     "@xterm/headless": "5.5.0",

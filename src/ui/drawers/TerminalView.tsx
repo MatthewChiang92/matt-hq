@@ -3,6 +3,7 @@ import { Terminal } from "@xterm/xterm";
 import { useEffect, useRef } from "react";
 import { officeActions } from "../../store/office";
 import { readTerminal, subscribeTerminal } from "../../store/terminal";
+import { FONT_EVENT, savedFont, terminalFont, type FontStyle } from "../../theme/fonts";
 
 const theme = {
   background: "#16213f",
@@ -28,11 +29,12 @@ export function TerminalView({ agentId, autoFocus = true }: { agentId: string; a
     const el = host.current;
     if (!el) return;
     let disposed = false;
+    const font = terminalFont(savedFont());
     const term = new Terminal({
       theme,
-      fontFamily: '"VT323", ui-monospace, Menlo, monospace',
-      fontSize: 19,
-      lineHeight: 1.05,
+      fontFamily: font.family,
+      fontSize: font.size,
+      lineHeight: font.lineHeight,
       cursorBlink: true,
       scrollback: 3000,
       convertEol: false,
@@ -43,8 +45,25 @@ export function TerminalView({ agentId, autoFocus = true }: { agentId: string; a
     let unsub = () => {};
     let ro: ResizeObserver | null = null;
 
-    // Measure with the pixel font loaded, or columns come out wrong.
-    void document.fonts.load('19px "VT323"').finally(() => {
+    // Font style changed in Settings: switch once the new font is loaded, then re-measure.
+    const onFont = (e: Event) => {
+      const f = terminalFont((e as CustomEvent<FontStyle>).detail);
+      void document.fonts.load(f.load).finally(() => {
+        if (disposed) return;
+        term.options.fontFamily = f.family;
+        term.options.fontSize = f.size;
+        term.options.lineHeight = f.lineHeight;
+        try {
+          fit.fit();
+        } catch {
+          /* not open yet */
+        }
+      });
+    };
+    window.addEventListener(FONT_EVENT, onFont);
+
+    // Measure with the font loaded, or columns come out wrong.
+    void document.fonts.load(font.load).finally(() => {
       if (disposed) return;
       term.open(el);
       fit.fit();
@@ -75,6 +94,7 @@ export function TerminalView({ agentId, autoFocus = true }: { agentId: string; a
 
     return () => {
       disposed = true;
+      window.removeEventListener(FONT_EVENT, onFont);
       unsub();
       ro?.disconnect();
       term.dispose();

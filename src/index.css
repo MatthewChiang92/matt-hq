@@ -3,6 +3,13 @@
 @import "@fontsource/pixelify-sans/600.css";
 @import "@fontsource/pixelify-sans/700.css";
 @import "@fontsource/vt323/400.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/700.css";
 @import "@xterm/xterm/css/xterm.css";
 
 @theme {
@@ -23,6 +30,20 @@
   --color-grass: #4a8f3d;
   --font-ui: "Pixelify Sans", "Trebuchet MS", system-ui, sans-serif;
   --font-term: "VT323", ui-monospace, Menlo, Consolas, monospace;
+}
+
+/* Font styles (Settings → Project → Font). The office canvas and terminal keep their pixel fonts. */
+html[data-font="clean"] {
+  --font-ui: "Inter", system-ui, sans-serif;
+  --font-term: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+html[data-font="mono"] {
+  --font-ui: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --font-term: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+/* VT323 is small for its size; keep data text the same visual size in the other fonts. */
+html[data-font] .font-term {
+  font-size-adjust: 0.42;
 }
 
 @layer base {

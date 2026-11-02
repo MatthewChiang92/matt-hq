@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { chosenTools } from "../../data/stack";
+import { chosenTools, STACK_CATALOG } from "../../data/stack";
 import { officeActions, useOffice } from "../../store/office";
 import { Field, SectionTitle } from "../kit";
 import { TerminalView } from "../drawers/TerminalView";
@@ -27,7 +27,8 @@ export function McpSettings() {
     officeActions.setAgentMcp(agentId, on ? [...cur, name] : cur.filter((n) => n !== name));
   };
   const stuck = team.flatMap((a) => (mcp.attached[a.id] ?? []).filter((n) => !(a.mcp ?? []).includes(n)).map((n) => ({ agent: a, name: n })));
-  const canAdd = /^[a-z0-9][a-z0-9_-]{0,39}$/.test(form.name.trim().toLowerCase()) && (form.local ? form.command.trim() : form.url.trim());
+  const missing = form.local ? null : missingParam(form.url);
+  const canAdd = /^[a-z0-9][a-z0-9_-]{0,39}$/.test(form.name.trim().toLowerCase()) && (form.local ? form.command.trim() : form.url.trim()) && !missing;
   const add = () => {
     officeActions.addMcp({
       name: form.name.trim().toLowerCase(),
@@ -217,6 +218,7 @@ export function McpSettings() {
             </Field>
           )}
         </div>
+        {missing && <p className="mt-2 border-[3px] border-orange bg-[#fff1d6] px-3 py-1.5 text-[13px]">{missing}</p>}
         <div className="mt-3 flex items-center gap-3">
           <button className="btn" disabled={!canAdd} onClick={add}>
             Add server
@@ -228,4 +230,16 @@ export function McpSettings() {
       </section>
     </div>
   );
+}
+
+/** A stack tool's MCP URL that still lacks a required parameter (e.g. Supabase without project_ref): returns the hint. */
+function missingParam(url: string): string | null {
+  let u: URL;
+  try {
+    u = new URL(url.trim());
+  } catch {
+    return null;
+  }
+  const tool = STACK_CATALOG.find((t) => t.mcp && t.mcpParam && new URL(t.mcp).host === u.host);
+  return tool?.mcpParam && !u.searchParams.get(tool.mcpParam.name)?.trim() ? tool.mcpParam.hint : null;
 }

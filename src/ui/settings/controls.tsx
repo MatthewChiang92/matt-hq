@@ -11,6 +11,7 @@ interface Props {
   list?: string;
   multiline?: boolean;
   type?: string;
+  maxLength?: number;
 }
 
 export function CommitInput({ value, onCommit, multiline, ...rest }: Props) {

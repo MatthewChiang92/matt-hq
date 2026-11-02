@@ -23,6 +23,27 @@ export function DrawerHost() {
   const reduce = useReducedMotion();
   const key = drawer ? (drawer.kind === "agent" ? `agent:${drawer.id}` : drawer.kind === "env" ? `env:${drawer.name}` : drawer.kind) : null;
 
+  // The task board needs room for its columns: it opens as a large centered modal, not a side drawer.
+  if (drawer?.kind === "boards")
+    return (
+      <div
+        className="fixed inset-0 z-30 grid place-items-center bg-[rgba(36,26,46,0.55)] p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Boards"
+        onMouseDown={(e) => e.target === e.currentTarget && ui.closeDrawer()}
+      >
+        <motion.div
+          initial={reduce ? false : { y: -16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.2 }}
+          className="panel flex h-[90vh] w-[90vw] flex-col"
+        >
+          <BoardsDrawer initialBoardId={drawer.boardId} />
+        </motion.div>
+      </div>
+    );
+
   return (
     <AnimatePresence mode="wait">
       {drawer && (
@@ -36,7 +57,6 @@ export function DrawerHost() {
           aria-label="Details"
         >
           {drawer.kind === "agent" && <AgentDrawer id={drawer.id} initialTab={drawer.tab} />}
-          {drawer.kind === "boards" && <BoardsDrawer initialBoardId={drawer.boardId} />}
           {drawer.kind === "prs" && <PrDrawer />}
           {drawer.kind === "actions" && <ActionItemsDrawer />}
           {drawer.kind === "env" && <EnvironmentDrawer name={drawer.name} />}

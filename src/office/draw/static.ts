@@ -1,5 +1,6 @@
 // The static layer: lawn, floors, walls and furniture, drawn once per layout.
 
+import { officeSign } from "../../data/names";
 import type { HqConfig } from "../../data/types";
 import { mulberry32 } from "../../lib/random";
 import { text, textW } from "../engine/font";
@@ -171,8 +172,11 @@ export function buildStatic(l: OfficeLayout, config: HqConfig): HTMLCanvasElemen
   });
   box(p, 208, 22, 80, 24, C.desk);
   p.rect(209, 23, 78, 1, C.woodL);
-  text(p, "JSM HQ", 249 - textW("JSM HQ", 2) / 2, 30, C.ink, 2);
-  text(p, "JSM HQ", 248 - textW("JSM HQ", 2) / 2, 29, C.white, 2);
+  // Office name: big letters when it fits the 80px sign, small ones when it's longer.
+  const sign = officeSign(config.project.officeName);
+  const ss = textW(sign, 2) <= 76 ? 2 : 1;
+  text(p, sign, 249 - textW(sign, ss) / 2, ss === 2 ? 30 : 33, C.ink, ss);
+  text(p, sign, 248 - textW(sign, ss) / 2, ss === 2 ? 29 : 32, C.white, ss);
   box(p, 180, 22, 22, 26, C.navy);
   p.rect(189, 27, 4, 9, C.white);
   p.rect(190, 26, 2, 1, C.red);
