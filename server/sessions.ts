@@ -17,7 +17,7 @@ import { sandboxList } from "./lib/json";
 import { run } from "./lib/exec";
 import { log } from "./lib/log";
 import { projectHome, sessionName } from "./paths";
-import { POLICY_NOT_INITIALIZED, runSetupChecks } from "./setup";
+import { POLICY_NOT_INITIALIZED, policyVerdict, runSetupChecks } from "./setup";
 import { ensureWorkspace, workspaceFor } from "./workspace";
 
 const TERM_ENV = { ...process.env, TERM: "xterm-256color", COLORTERM: "truecolor" } as Record<string, string>;
@@ -276,8 +276,7 @@ export class Sessions {
     if (this.policyOk) return;
     const port = this.hub.snap.config.project.hqPort;
     for (const target of [`localhost:${port}`, `host.docker.internal:${port}`]) {
-      const check = await run("sbx", ["policy", "check", "network", target], { timeoutMs: 10_000 });
-      if (/^Allowed/m.test(check.stdout)) continue;
+      if ((await policyVerdict(target)).verdict === "allowed") continue;
       const add = await run("sbx", ["policy", "allow", "network", target], { timeoutMs: 10_000 });
       if (!add.ok && POLICY_NOT_INITIALIZED.test(add.stderr + add.stdout)) {
         void this.recheckSetup();

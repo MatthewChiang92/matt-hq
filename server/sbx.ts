@@ -10,6 +10,7 @@ import { parseCliJson, sandboxList } from "./lib/json";
 import { run } from "./lib/exec";
 import { log } from "./lib/log";
 import { projectHome, sessionName } from "./paths";
+import { policyVerdict } from "./setup";
 
 interface RawRule {
   id: string;
@@ -75,7 +76,7 @@ export class Sbx {
   }
 
   private async basePolicy(): Promise<BasePolicy> {
-    const allowed = async (target: string) => /^Allowed/m.test((await run("sbx", ["policy", "check", "network", target], { timeoutMs: 10_000 })).stdout);
+    const allowed = async (target: string) => (await policyVerdict(target)).verdict === "allowed";
     // A made-up host is only allowed under allow-all; a registry is allowed under balanced too.
     if (await allowed("hq-probe.invalid")) return "allow-all";
     if (await allowed("registry.npmjs.org")) return "balanced";
