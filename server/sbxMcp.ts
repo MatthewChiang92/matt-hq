@@ -58,12 +58,14 @@ export class SbxMcp {
       return this.publish();
     }
     const r = await run("sbx", ["mcp", "ls", "--json"], { timeoutMs: 15_000 });
-    const data = r.ok ? parseCliJson<{ servers?: { name: string; transport?: string; status?: string; next_step?: string }[] }>(r.stdout) : null;
+    // sbx ≤ 0.47 wraps the list ({ "servers": [...] }); 0.48+ prints the array itself.
+    type Row = { name: string; transport?: string; status?: string; next_step?: string };
+    const data = r.ok ? parseCliJson<Row[] | { servers?: Row[] }>(r.stdout) : null;
     if (!data) {
       this.state.error = firstLine(r.stderr || r.stdout) || "Couldn't read sbx's MCP servers.";
       return this.publish();
     }
-    this.state.servers = (data.servers ?? []).map(
+    this.state.servers = (Array.isArray(data) ? data : (data.servers ?? [])).map(
       (s): McpServer => ({ name: s.name, transport: s.transport ?? "", status: s.status ?? "unknown", nextStep: s.next_step ?? null }),
     );
     this.state.error = null;

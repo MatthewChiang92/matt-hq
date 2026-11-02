@@ -24,7 +24,7 @@ export interface StackTool {
   skills: SkillSpec[];
   /** A hosted MCP server, if the tool has one. */
   mcp?: string;
-  /** A query parameter the MCP URL must have before it can be added (e.g. Supabase's project_ref). */
+  /** An optional MCP URL parameter worth suggesting (e.g. Supabase's project_ref); shown as a tip, never required. */
   mcpParam?: { name: string; hint: string };
   /** One line for the agents' ROLE.md. */
   note: string;
@@ -134,8 +134,8 @@ export const STACK_CATALOG: StackTool[] = [
     docs: ["supabase.com"], api: ["*.supabase.co"], keys: ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SECRET_KEY", "DATABASE_URL"],
     skills: [{ source: "supabase/agent-skills", skills: ["supabase", "supabase-postgres-best-practices"] }],
     // Scoped to one project and read-only: without project_ref the MCP reaches every project in the account.
-    mcp: "https://mcp.supabase.com/mcp?project_ref=&read_only=true",
-    mcpParam: { name: "project_ref", hint: "Add your Supabase project ref after project_ref= (Project Settings → General). Use a dev project, not production." },
+    mcp: "https://mcp.supabase.com/mcp",
+    mcpParam: { name: "project_ref", hint: "Tip: add ?project_ref=<id> to limit it to one project (Project Settings → General). Without it, the agent can reach every project in your account." },
     note: "Database is Supabase Postgres", verify: true,
   },
   {
