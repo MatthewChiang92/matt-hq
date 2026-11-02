@@ -88,6 +88,7 @@ export function layoutKey(config: HqConfig, envs: Environment[]): string {
     wf.review.tool,
     wf.deploy.enabled,
     envs.map((e) => e.name),
+    config.project.officeName ?? "",
   ]);
 }
 

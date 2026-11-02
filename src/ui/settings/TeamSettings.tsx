@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { nextAgentName } from "../../data/names";
 import { CLI_LABEL, type AgentCli, type AgentConfig, type AgentMode } from "../../data/types";
 import { officeActions, useOffice } from "../../store/office";
 import { agentPalette } from "../../theme/tokens";
@@ -144,9 +145,10 @@ function AddAgent() {
   const [role, setRole] = useState("Developer");
   const [cli, setCli] = useState<AgentCli>("claude");
   const [mode, setMode] = useState<AgentMode>("sandbox");
+  const team = useOffice((s) => s.snap?.config.team) ?? [];
+  const suggested = nextAgentName(team.map((a) => a.name));
   const add = () => {
-    if (!name.trim()) return;
-    officeActions.addAgent({ name: name.trim(), role, cli, mode });
+    officeActions.addAgent({ name: name.trim() || suggested, role, cli, mode });
     setName("");
   };
   return (
@@ -160,7 +162,7 @@ function AddAgent() {
         }}
       >
         <Field label="Name">
-          <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Kenji" />
+          <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder={suggested} />
         </Field>
         <Field label="Role">
           <input className="field" value={role} list="role-suggestions" onChange={(e) => setRole(e.target.value)} />
@@ -174,7 +176,7 @@ function AddAgent() {
             <option value="local">Local</option>
           </select>
         </Field>
-        <button className="btn" type="submit" disabled={!name.trim()}>
+        <button className="btn" type="submit">
           Add
         </button>
       </form>

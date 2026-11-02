@@ -19,7 +19,7 @@ HQ opens your browser and walks you through the rest:
 
 1. **Welcome:** name the project, pick a lead and workers (Claude Code or Codex for each) and a review tool. HQ saves this to `.jsmhq/config.json` in your repo.
 2. **Setup checklist:** if something is missing on your machine, HQ shows what to install, with a Copy button, docs links and, for safe commands, **Run in terminal**.
-3. **Start the team** from the top bar, then message the lead from their **Messages** tab, for example: *"Plan two small tasks for Bob and assign the first one."*
+3. **Start the team** from the top bar, then message the lead from their **Messages** tab, for example: *"Plan two small tasks for Dwight and assign the first one."*
 
 Want to try it without touching a real project? Make a throwaway repo:
 

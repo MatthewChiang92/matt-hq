@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { LEAD_NAME, nextAgentName, WORKER_NAMES } from "../../data/names";
 import { EMPTY_STACK, frameworks, STACK_CATEGORIES, toolsIn, type StackConfig } from "../../data/stack";
 import type { AgentCli, ReviewTool } from "../../data/types";
 import { officeActions, reviewToolLabel, useOffice } from "../../store/office";
@@ -13,14 +14,13 @@ interface WorkerDraft {
 }
 
 const MAX_WORKERS = 11;
-const NAMES = ["Bob", "Ana", "Kai", "Mia", "Leo", "Zoe", "Sam", "Ivy", "Max", "Eve", "Jay"];
 
 /** First run on a repo: name the project and pick the team. Nothing is saved until "Create team". */
 export function WelcomeModal() {
   const snap = useOffice((s) => s.snap);
   const [projectName, setProjectName] = useState(snap?.config.project.name ?? "");
-  const [lead, setLead] = useState<{ name: string; cli: AgentCli }>({ name: "John", cli: "claude" });
-  const [workers, setWorkers] = useState<WorkerDraft[]>([{ name: "Bob", role: "Developer", cli: "claude" }]);
+  const [lead, setLead] = useState<{ name: string; cli: AgentCli }>({ name: LEAD_NAME, cli: "claude" });
+  const [workers, setWorkers] = useState<WorkerDraft[]>([{ name: WORKER_NAMES[0], role: "Developer", cli: "claude" }]);
   // Defaults come from what HQ detected in the repo (e.g. a CodeRabbit config).
   const [reviewEnabled, setReviewEnabled] = useState(snap?.config.workflow.review.enabled ?? true);
   const [reviewTool, setReviewTool] = useState<ReviewTool>(snap?.config.workflow.review.tool ?? "human");
@@ -30,7 +30,7 @@ export function WelcomeModal() {
 
   const setWorker = (i: number, patch: Partial<WorkerDraft>) => setWorkers((ws) => ws.map((w, j) => (j === i ? { ...w, ...patch } : w)));
   const addWorker = () =>
-    setWorkers((ws) => [...ws, { name: NAMES.find((n) => !ws.some((w) => w.name === n)) ?? `Agent ${ws.length + 1}`, role: "Developer", cli: "claude" }]);
+    setWorkers((ws) => [...ws, { name: nextAgentName([lead.name, ...ws.map((w) => w.name)]), role: "Developer", cli: "claude" }]);
   const valid = lead.name.trim() && workers.length > 0 && workers.every((w) => w.name.trim());
 
   const submit = () => {

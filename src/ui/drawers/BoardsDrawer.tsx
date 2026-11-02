@@ -60,7 +60,7 @@ export function BoardsDrawer({ initialBoardId }: { initialBoardId?: string }) {
           </button>
         </div>
       )}
-      <div className="scroll-thin grid min-h-0 flex-1 auto-cols-[minmax(112px,1fr)] grid-flow-col gap-2 overflow-auto bg-[#f7f3ea] p-3">
+      <div className="scroll-thin grid min-h-0 flex-1 auto-cols-[minmax(200px,1fr)] grid-flow-col gap-2 overflow-auto bg-[#f7f3ea] p-3">
         {cols.map((c) => {
           const list = tasks.filter((t) => t.status === c.id);
           if (c.id === "done") list.reverse();
