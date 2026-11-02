@@ -53,15 +53,26 @@ async function checkSbx(brew: boolean): Promise<Check> {
 export const POLICY_NOT_INITIALIZED = /not been initialized|sbx policy init/i;
 
 /**
+ * `sbx policy check network <host>`: "allowed", "denied", or null when sbx gave no verdict.
+ * Newer sbx (0.50+) may print the verdict on stderr and add terminal escape codes, so both
+ * streams are read with the codes removed.
+ */
+export async function policyVerdict(host: string): Promise<{ verdict: "allowed" | "denied" | null; out: string }> {
+  const r = await run("sbx", ["policy", "check", "network", host], { timeoutMs: 10_000 });
+  // eslint-disable-next-line no-control-regex
+  const out = `${r.stdout}\n${r.stderr}`.replace(/\x1b(\[[0-9;?]*[ -\/]*[@-~]|\][^\x07\x1b]*(\x07|\x1b\\)|[@-_])/g, "");
+  const m = out.match(/\b(Allowed|Denied):/);
+  return { verdict: m ? (m[1] === "Allowed" ? "allowed" : "denied") : null, out };
+}
+
+/**
  * A fresh sbx needs a base network policy (`sbx policy init`) before any rule
  * can be added or a sandbox started. HQ suggests one but never picks it.
  */
 async function checkSbxPolicy(loginOk: boolean): Promise<Check> {
   const base = { id: "sbx-policy" as const, label: "Sandbox network policy", neededFor: "sandbox" as const };
   if (!loginOk) return { ...base, status: "missing", detail: "Waiting for Docker sign-in.", fix: null };
-  const probe = (host: string) => run("sbx", ["policy", "check", "network", host], { timeoutMs: 10_000 });
-  const registry = await probe("registry.npmjs.org");
-  const out = `${registry.stdout}\n${registry.stderr}`;
+  const { verdict, out } = await policyVerdict("registry.npmjs.org");
   if (POLICY_NOT_INITIALIZED.test(out))
     return {
       ...base,
@@ -70,9 +81,9 @@ async function checkSbxPolicy(loginOk: boolean): Promise<Check> {
         "Not set yet. Choose what sandboxes can reach once: balanced (recommended: AI services, package registries, GitHub), allow-all, or deny-all. Change it later with sbx policy reset.",
       fix: fix("sbx policy init balanced", true, SBX_DOCS),
     };
-  if (!/^(Allowed|Denied)/m.test(registry.stdout)) return { ...base, status: "warning", detail: out.trim().split("\n")[0] || "sbx did not respond.", fix: fix("sbx diagnose", true, SBX_DOCS) };
-  const open = /^Allowed/m.test((await probe("hq-probe.invalid")).stdout);
-  const name = open ? "Allow all" : /^Allowed/m.test(registry.stdout) ? "Balanced" : "Deny all";
+  if (!verdict) return { ...base, status: "warning", detail: out.trim().split("\n")[0] || "sbx did not respond.", fix: fix("sbx diagnose", true, SBX_DOCS) };
+  const open = (await policyVerdict("hq-probe.invalid")).verdict === "allowed";
+  const name = open ? "Allow all" : verdict === "allowed" ? "Balanced" : "Deny all";
   return { ...base, status: "ok", detail: `${name}. HQ adds only the rule that lets sandboxes reach it.`, fix: null };
 }
 
