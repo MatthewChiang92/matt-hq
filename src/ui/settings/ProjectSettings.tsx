@@ -10,7 +10,7 @@ function FontPicker() {
   return (
     <section className="border-[3px] border-ink bg-white p-3">
       <SectionTitle>Font</SectionTitle>
-      <Field label="Font style" hint="For panels, drawers and settings. The office and the terminal stay pixel. Saved in this browser only.">
+      <Field label="Font style" hint="For panels, drawers, settings and agent terminals. The office stays pixel. Saved in this browser only.">
         <select
           className="field w-[320px]"
           value={font}
