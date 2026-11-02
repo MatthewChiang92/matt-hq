@@ -27,8 +27,8 @@ export function McpSettings() {
     officeActions.setAgentMcp(agentId, on ? [...cur, name] : cur.filter((n) => n !== name));
   };
   const stuck = team.flatMap((a) => (mcp.attached[a.id] ?? []).filter((n) => !(a.mcp ?? []).includes(n)).map((n) => ({ agent: a, name: n })));
-  const missing = form.local ? null : missingParam(form.url);
-  const canAdd = /^[a-z0-9][a-z0-9_-]{0,39}$/.test(form.name.trim().toLowerCase()) && (form.local ? form.command.trim() : form.url.trim()) && !missing;
+  const tip = form.local ? null : missingParam(form.url);
+  const canAdd = /^[a-z0-9][a-z0-9_-]{0,39}$/.test(form.name.trim().toLowerCase()) && (form.local ? form.command.trim() : form.url.trim());
   const add = () => {
     officeActions.addMcp({
       name: form.name.trim().toLowerCase(),
@@ -218,7 +218,7 @@ export function McpSettings() {
             </Field>
           )}
         </div>
-        {missing && <p className="mt-2 border-[3px] border-orange bg-[#fff1d6] px-3 py-1.5 text-[13px]">{missing}</p>}
+        {tip && <p className="mt-2 text-[13px] text-muted">{tip}</p>}
         <div className="mt-3 flex items-center gap-3">
           <button className="btn" disabled={!canAdd} onClick={add}>
             Add server
@@ -232,7 +232,7 @@ export function McpSettings() {
   );
 }
 
-/** A stack tool's MCP URL that still lacks a required parameter (e.g. Supabase without project_ref): returns the hint. */
+/** A stack tool's MCP URL without its suggested parameter (e.g. Supabase without project_ref): returns the tip. */
 function missingParam(url: string): string | null {
   let u: URL;
   try {
