@@ -7,6 +7,23 @@ import type { Hub } from "./hub";
 import { log } from "./lib/log";
 import type { Planner } from "./planner";
 
+const MERGE_CMD = (n: number | string) => `gh pr merge ${n} --squash --delete-branch`;
+
+/** What the lead is told when a PR passes review: merge it, or leave it to the user (Settings → Workflow → Merge). */
+export function passedNotice(pr: Pick<PullRequest, "number" | "title">, author: string, by: "human" | "lead"): string {
+  const head = `PR #${pr.number} (${pr.title}) by ${author} passed review.`;
+  return by === "lead"
+    ? `${head} You merge PRs on this project: run \`${MERGE_CMD(pr.number)}\` now. If GitHub refuses (conflicts or failing checks), ask the author to fix it instead. Then assign the next task if anything is waiting.`
+    : `${head} It's ready for the user to merge. Don't merge it yourself.`;
+}
+
+/** What the lead is told when the user changes who merges, with the PRs already waiting. */
+export function mergeByNotice(by: "human" | "lead", waiting: number[]): string {
+  if (by === "human") return "The user changed the workflow: the user merges PRs now. Don't merge PRs yourself.";
+  const list = waiting.length ? ` These passed review and are waiting: ${waiting.map((n) => `#${n}`).join(", ")}. Merge each with \`${MERGE_CMD("<number>")}\`.` : "";
+  return `The user changed the workflow: you now merge PRs once they pass review.${list}`;
+}
+
 const MIN_POLL_MS = 20_000; // never more often than this (nudges included)
 const MAX_POLL_MS = 5 * 60_000;
 const HQ_BUDGET = 1200; // GraphQL points per hour HQ may use; the rest of the 5,000 is left for the agents' gh commands
@@ -176,7 +193,7 @@ export class GitHubSync {
 
     if (pr.review === "passed" && old?.review !== "passed") {
       hub.activity("review.passed", who, `${tool} approved #${pr.number}`);
-      if (lead) this.planner.notify(lead.id, `PR #${pr.number} (${pr.title}) by ${hub.name(who)} passed review and is ready to merge.`);
+      if (lead) this.planner.notify(lead.id, passedNotice(pr, hub.name(who), hub.snap.config.workflow.merge.by));
     }
 
     if (pr.conflict && !old?.conflict && who)
