@@ -14,6 +14,7 @@ import type { Sbx } from "./sbx";
 import type { SbxMcp } from "./sbxMcp";
 import type { Sessions } from "./sessions";
 import { newAgent } from "./store";
+import { mergeByNotice } from "./githubSync";
 
 /** A stack from the browser, checked against the catalog. Null when nothing is chosen. */
 function cleanStack(raw: unknown): StackConfig | null {
@@ -278,10 +279,17 @@ export function makeCommands(hub: Hub, sessions: Sessions, planner: Planner, inb
     updateWorkflow: (patch) => {
       const p = (patch ?? {}) as WorkflowPatch;
       const wf = hub.snap.config.workflow;
+      const mergeBy = wf.merge.by;
       Object.assign(wf.review, p.review ?? {});
-      Object.assign(wf.merge, p.merge ?? {});
+      if (p.merge?.by === "human" || p.merge?.by === "lead") wf.merge.by = p.merge.by;
       Object.assign(wf.deploy, p.deploy ?? {});
       hub.configChanged();
+      // The lead was told the old rule; tell it the new one now, so no restart is needed.
+      const lead = hub.snap.config.team.find((a) => a.isLead);
+      if (lead && wf.merge.by !== mergeBy) {
+        const waiting = hub.snap.pullRequests.filter((pr) => pr.review === "passed" && !pr.merged && !pr.closed).map((pr) => pr.number);
+        planner.notify(lead.id, mergeByNotice(wf.merge.by, waiting));
+      }
     },
 
     updateProject: (patch) => {

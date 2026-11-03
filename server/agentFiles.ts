@@ -109,7 +109,10 @@ export function roleMd(agent: AgentConfig, cfg: HqConfig, extras: RoleExtras = {
         "You plan the work and assign it to the team. You never write app code.",
         "Keep tasks small: one task = one branch = one PR. Give each task the files it may edit and a clear done-when.",
         "Assign only to agents that are running and free (check list_workers).",
-        "Decide merge order and resolve conflicts between PRs.",
+        cfg.workflow.merge.by === "lead"
+          ? "You merge PRs once they pass review (`gh pr merge <number> --squash --delete-branch`), one at a time, in an order that avoids conflicts. HQ tells you when each one passes."
+          : "The user merges PRs; never merge one yourself. Decide the order they should land in, and tell the user if one blocks another.",
+        "If the user changes who merges, HQ tells you. Follow the latest message.",
       ]
     : [
         "Work only on the task you were given. One task = one branch = one PR.",

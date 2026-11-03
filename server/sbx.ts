@@ -215,8 +215,8 @@ export class Sbx {
 
   /**
    * Answers blocked requests. Allow adds an HQ-owned allow rule for exactly that host:port (shown and
-   * removable in Settings → Sandbox) and clears every queued request for it; Dismiss clears only the one
-   * (or all with "all"). One answer per agent at a time; a second click meanwhile is ignored.
+   * removable in Settings → Sandbox) and clears every queued request for it; Dismiss clears only the one.
+   * "all" answers every listed request the same way. One answer per agent at a time; a second click meanwhile is ignored.
    */
   async answerApproval(agentId: string, approvalId: string | "all", decision: "allow" | "dismiss") {
     if (this.answering.has(agentId)) return;
@@ -237,6 +237,7 @@ export class Sbx {
     const target = approvalId === "all" ? null : list.find((a) => a.id === approvalId);
     if (approvalId !== "all" && !target) return;
     const respond = (id: string, option: "allow" | "dismiss") => this.respondApproval(id, option);
+    if (decision === "allow" && approvalId === "all") return this.allowAll(agentId, list);
 
     if (decision === "allow" && target) {
       const who = this.hub.name(agentId);
@@ -276,6 +277,45 @@ export class Sbx {
       this.hub.activity("config", agentId, `You allowed ${target.host} for ${who}'s sandbox`);
     } else {
       for (const a of approvalId === "all" ? list : [target!]) await respond(a.id, "dismiss");
+    }
+    await this.refreshApprovals();
+  }
+
+  /** Allow all: one sync for every host:port rule, then sbx's own approval for the rest (same split as one Allow). */
+  private async allowAll(agentId: string, list: SbxAgentState["approvals"]) {
+    const agent = this.hub.cfg(agentId);
+    if (!agent || !list.length) return;
+    const who = this.hub.name(agentId);
+    const viaRule = (a: (typeof list)[number]) =>
+      (!a.protocol || a.protocol === "TCP") && a.hostWide !== false && !/required by policy|organi[sz]ation/i.test(a.detail);
+    const failed: string[] = [];
+    for (const a of list.filter((x) => !viaRule(x))) if (!(await this.respondApproval(a.id, "allow"))) failed.push(a.host);
+
+    const hosts = [...new Set(list.filter(viaRule).map((a) => a.host))];
+    const added = hosts.filter((h) => !agent.sandbox.allow.includes(h));
+    if (added.length) {
+      agent.sandbox.allow = [...agent.sandbox.allow, ...added];
+      this.hub.configChanged();
+    }
+    if (hosts.length) await this.syncRules(agentId);
+    const st = this.state.agents[agentId];
+    const applied = (h: string) => st?.rules.some((r) => r.decision === "allow" && r.resources.includes(h)) && !st?.syncError?.includes(h);
+    const notApplied = hosts.filter((h) => !applied(h));
+    // Hosts sbx didn't take come back off the list (and stay listed as blocked), as with one Allow.
+    const undo = added.filter((h) => notApplied.includes(h));
+    if (undo.length) {
+      agent.sandbox.allow = agent.sandbox.allow.filter((h) => !undo.includes(h));
+      this.hub.configChanged();
+      await this.syncRules(agentId);
+    }
+    failed.push(...notApplied);
+    for (const a of list.filter((x) => viaRule(x) && !notApplied.includes(x.host))) await this.respondApproval(a.id, "dismiss");
+
+    const ok = new Set(list.map((a) => a.host).filter((h) => !failed.includes(h))).size;
+    if (ok) this.hub.activity("config", agentId, `You allowed ${ok} site${ok === 1 ? "" : "s"} for ${who}'s sandbox`);
+    if (failed.length) {
+      const why = agent.mode !== "sandbox" ? `${who} isn't in Sandbox mode` : st?.syncError?.slice(0, 120) || "sbx didn't apply them";
+      this.hub.activity("config", agentId, `Couldn't allow ${failed.slice(0, 3).join(", ")}${failed.length > 3 ? ` and ${failed.length - 3} more` : ""}: ${why}. They're still listed.`);
     }
     await this.refreshApprovals();
   }
