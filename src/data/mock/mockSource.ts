@@ -369,12 +369,15 @@ export function createMockSource(): OfficeDataSource {
       const st = world.snap.sbx.agents[agentId];
       const target = st?.approvals.find((a) => a.id === approvalId);
       if (!st || (approvalId !== "all" && !target)) return;
-      if (decision === "allow" && target) {
+      if (decision === "allow") {
         const agent = world.cfg(agentId);
-        if (agent && !agent.sandbox.allow.includes(target.host)) agent.sandbox.allow = [...agent.sandbox.allow, target.host];
-        hostCmd(agentId, `sbx policy allow network --sandbox hq-mock-${agentId} ${target.host} (mock)`);
+        const hosts = [...new Set((target ? [target] : st.approvals).map((a) => a.host))];
+        for (const host of hosts) {
+          if (agent && !agent.sandbox.allow.includes(host)) agent.sandbox.allow = [...agent.sandbox.allow, host];
+          hostCmd(agentId, `sbx policy allow network --sandbox hq-mock-${agentId} ${host} (mock)`);
+        }
         world.configChanged();
-        world.activity("config", agentId, `You allowed ${target.host} for ${world.name(agentId)}'s sandbox`);
+        world.activity("config", agentId, `You allowed ${target ? target.host : `${hosts.length} sites`} for ${world.name(agentId)}'s sandbox`);
       }
       st.approvals = approvalId === "all" ? [] : st.approvals.filter((a) => (decision === "allow" ? a.host !== target?.host : a.id !== approvalId));
       syncSbx();

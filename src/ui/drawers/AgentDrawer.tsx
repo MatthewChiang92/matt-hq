@@ -132,6 +132,17 @@ function BlockedRequests({ agent }: { agent: AgentConfig }) {
         <b className="flex-1">
           Blocked by the sandbox · {approvals.length}
         </b>
+        <button
+          className="text-[12px] underline disabled:opacity-50"
+          disabled={busy}
+          onClick={() => {
+            const hosts = [...new Set(approvals.map((a) => a.title ?? a.host))];
+            const list = hosts.slice(0, 15).join("\n") + (hosts.length > 15 ? `\n…and ${hosts.length - 15} more` : "");
+            if (window.confirm(`Allow all ${hosts.length} for ${agent.name}'s sandbox?\n\n${list}\n\nOnly allow sites you trust. You can remove them later in Settings → Sandbox.`)) act("all", "allow");
+          }}
+        >
+          Allow all
+        </button>
         <button className="text-[12px] underline disabled:opacity-50" disabled={busy} onClick={() => act("all", "dismiss")}>
           Dismiss all
         </button>
