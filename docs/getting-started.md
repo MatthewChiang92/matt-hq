@@ -107,15 +107,15 @@ Tip: add a short `plan.md` (stack, features, phases) and push it before starting
 From your project's folder:
 
 ```bash
-npx @therealjsmastery/jsm-hq
+npx @therealjsmastery/jsm-hq@latest
 ```
 
-HQ opens your browser. If it doesn't, open the `http://127.0.0.1:7420/?token=…` link printed in the terminal.
+`@latest` makes sure npx doesn't reuse an old version it cached. HQ opens your browser. If it doesn't, open the `http://127.0.0.1:7420/?token=…` link printed in the terminal.
 
 - **Welcome:** name the project, pick a lead and workers (Claude Code or Codex for each) and a review tool. Optionally pick your stack (frameworks, auth, payments, database, analytics, security): agents then get those tools' agent skills and know what the project uses. This is saved to `.jsmhq/config.json` in your repo.
 - **Setup checklist:** anything still missing shows here with a **Copy** button and, for safe commands, **Run in terminal**. Press **Check again** after fixing something.
 
-Leave the terminal running while you work. On macOS and Linux, agents keep running even if you close HQ; on Windows they stop with it.
+Leave the terminal running while you work. On macOS and Linux, agents keep running even if you close HQ; on Windows they stop with it (see [Windows](how-it-works.md#windows)).
 
 ## 7. Start the team
 
@@ -142,4 +142,4 @@ When an agent needs a website its sandbox blocks (a tool's docs, an API), it ask
 | "Port 7420 is in use" | Another HQ is running. Stop it or use `--port 7421`. |
 | Windows: `listen EACCES` | Windows reserved that port. Use `--port 8420`. |
 
-More in the [README](../README.md#troubleshooting).
+More in the [README](../README.md#troubleshooting). To learn what HQ does behind the office, read [How it works](how-it-works.md).
