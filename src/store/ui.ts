@@ -6,6 +6,7 @@ export type DrawerState =
   | { kind: "prs" }
   | { kind: "env"; name: string }
   | { kind: "actions" }
+  | { kind: "terminal" }
   | null;
 
 export type AgentTab = "terminal" | "shell" | "task" | "sandbox" | "messages";
@@ -35,6 +36,27 @@ interface UiState {
   planBoardId: string | null; // board shown on the plan wall; null = first active
   debugOpen: boolean;
   setupOpen: boolean;
+  /** Side drawer width in px, remembered per browser; `maximized` fills the screen. */
+  drawerWidth: number;
+  drawerMaximized: boolean;
+}
+
+const WIDTH_KEY = "jsmhq.drawerWidth";
+export const DRAWER_MIN = 420;
+export const DRAWER_DEFAULT = 520;
+
+/** Room left for the office and team panel when the drawer is as wide as it gets. */
+export function drawerMax() {
+  return Math.max(DRAWER_MIN, window.innerWidth - 32);
+}
+
+function savedWidth(): number {
+  try {
+    const v = Number(localStorage.getItem(WIDTH_KEY));
+    return Number.isFinite(v) && v >= DRAWER_MIN ? v : DRAWER_DEFAULT;
+  } catch {
+    return DRAWER_DEFAULT;
+  }
 }
 
 export const useUi = create<UiState>(() => ({
@@ -46,6 +68,8 @@ export const useUi = create<UiState>(() => ({
   planBoardId: null,
   debugOpen: false,
   setupOpen: false,
+  drawerWidth: savedWidth(),
+  drawerMaximized: false,
 }));
 
 let nonce = 0;
@@ -62,6 +86,9 @@ export const ui = {
   openBoards(boardId?: string) {
     useUi.setState({ drawer: { kind: "boards", boardId } });
     ui.focus({ kind: "plan" });
+  },
+  openTerminal() {
+    useUi.setState({ drawer: { kind: "terminal" } });
   },
   openActions() {
     useUi.setState({ drawer: { kind: "actions" } });
@@ -99,6 +126,18 @@ export const ui = {
   },
   closeSetup() {
     useUi.setState({ setupOpen: false });
+  },
+  setDrawerWidth(px: number) {
+    const w = Math.round(Math.min(drawerMax(), Math.max(DRAWER_MIN, px)));
+    useUi.setState({ drawerWidth: w, drawerMaximized: false });
+    try {
+      localStorage.setItem(WIDTH_KEY, String(w));
+    } catch {
+      /* private window: applies until reload */
+    }
+  },
+  toggleDrawerMaximized() {
+    useUi.setState((s) => ({ drawerMaximized: !s.drawerMaximized }));
   },
   toggleDebug() {
     useUi.setState((s) => ({ debugOpen: !s.debugOpen }));

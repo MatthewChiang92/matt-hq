@@ -4,7 +4,7 @@
 
 import { chmodSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { BasePolicy, SbxAgentState, SbxRule, SbxState } from "../src/data/types";
+import type { BasePolicy, SbxAgentState, SbxPort, SbxRule, SbxState } from "../src/data/types";
 import type { Hub } from "./hub";
 import { parseCliJson, sandboxList } from "./lib/json";
 import { run } from "./lib/exec";
@@ -124,13 +124,75 @@ export class Sbx {
         envFile: { path: this.envFile(a.id), exists: existsSync(this.envFile(a.id)) },
         syncError: prevErrors[a.id]?.syncError ?? null,
         approvals: prevErrors[a.id]?.approvals ?? [],
+        ports: prevErrors[a.id]?.ports ?? [],
       };
     }
     this.publish();
+    await this.refreshPorts();
   }
 
   private emptyAgent(agentId: string): SbxAgentState {
-    return { rules: [], keys: [], envFile: { path: this.envFile(agentId), exists: existsSync(this.envFile(agentId)) }, syncError: null, approvals: [] };
+    return { rules: [], keys: [], envFile: { path: this.envFile(agentId), exists: existsSync(this.envFile(agentId)) }, syncError: null, approvals: [], ports: [] };
+  }
+
+  // ------------------------------------------------------------ ports
+
+  /** Published ports of one sandbox, or null if sbx couldn't list them (e.g. the sandbox is gone). */
+  private async readPorts(agentId: string): Promise<SbxPort[] | null> {
+    const r = await run("sbx", ["ports", this.name(agentId), "--json"], { timeoutMs: 10_000 });
+    type Row = { host_port?: number; sandbox_port?: number };
+    const data = r.ok ? parseCliJson<Row[] | { ports?: Row[] }>(r.stdout) : null;
+    if (!data) return null;
+    const rows = Array.isArray(data) ? data : (data.ports ?? []);
+    // tcp4 and tcp6 bindings of the same port are listed separately.
+    const seen = new Map<number, SbxPort>();
+    for (const p of rows) if (p.sandbox_port && p.host_port) seen.set(p.sandbox_port, { sandbox: p.sandbox_port, host: p.host_port });
+    return [...seen.values()].sort((a, b) => a.sandbox - b.sandbox);
+  }
+
+  /** Re-reads forwarded ports for running sandboxed agents. */
+  async refreshPorts(agentId?: string) {
+    const ids = agentId ? [agentId] : this.hub.snap.config.team.map((a) => a.id);
+    let changed = false;
+    for (const id of ids) {
+      const a = this.hub.cfg(id);
+      const st = this.state.agents[id];
+      if (!a || !st) continue;
+      const running = a.mode === "sandbox" && this.hub.status(id)?.session.state === "running";
+      const ports = running ? ((await this.readPorts(id)) ?? []) : [];
+      if (JSON.stringify(ports) !== JSON.stringify(st.ports ?? [])) (st.ports = ports), (changed = true);
+    }
+    if (changed) this.publish();
+  }
+
+  /**
+   * Makes a port inside the agent's sandbox reachable at the same port on this machine (loopback
+   * only), e.g. for a CLI sign-in whose browser callback goes to localhost:<port>.
+   */
+  async forwardPort(agentId: string, port: number) {
+    const a = this.hub.cfg(agentId);
+    if (!a || a.mode !== "sandbox" || !Number.isInteger(port) || port < 1 || port > 65535) return;
+    const r = await run("sbx", ["ports", this.name(agentId), "--publish", `127.0.0.1:${port}:${port}`], { timeoutMs: 30_000 });
+    if (r.ok) this.hub.activity("config", agentId, `Forwarded port ${port} from ${a.name}'s sandbox to localhost:${port} on this machine.`);
+    else {
+      const why = `${r.stdout}\n${r.stderr}`.trim().split("\n").filter(Boolean).pop()?.replace(/^error: /i, "") ?? "";
+      const inUse = /in use|already allocated|address already/i.test(why);
+      this.hub.activity(
+        "config",
+        agentId,
+        `Couldn't forward port ${port} from ${a.name}'s sandbox: ${inUse ? `something on this machine already uses port ${port}. Stop it and try again.` : why.slice(0, 160)}`,
+      );
+    }
+    await this.refreshPorts(agentId);
+  }
+
+  async unforwardPort(agentId: string, port: number) {
+    const a = this.hub.cfg(agentId);
+    if (!a || !Number.isInteger(port) || port < 1 || port > 65535) return;
+    const host = this.state.agents[agentId]?.ports?.find((p) => p.sandbox === port)?.host ?? port;
+    const r = await run("sbx", ["ports", this.name(agentId), "--unpublish", `127.0.0.1:${host}:${port}`], { timeoutMs: 30_000 });
+    if (!r.ok) this.hub.activity("config", agentId, `Couldn't stop forwarding port ${port}: ${(r.stderr || r.stdout).trim().split("\n").pop()?.slice(0, 160)}`);
+    await this.refreshPorts(agentId);
   }
 
   // ------------------------------------------------------------ approvals

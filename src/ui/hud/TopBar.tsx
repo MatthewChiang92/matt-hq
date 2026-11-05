@@ -125,6 +125,9 @@ export function TopBar() {
         <button className="btn text-[14px]" onClick={() => ui.openPrs()}>
           PRs{openPrs ? ` · ${openPrs}` : ""}
         </button>
+        <button className="btn text-[14px]" onClick={() => ui.openTerminal()} title="Your own shell on this machine: the repo, an agent's folder or any folder">
+          Terminal
+        </button>
       </div>
       <button className="btn text-[14px]" onClick={() => ui.openSettings("team")}>
         Settings

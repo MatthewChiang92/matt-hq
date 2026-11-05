@@ -4,6 +4,7 @@ import { officeActions, useOffice } from "../../store/office";
 import { ui, type AgentTab } from "../../store/ui";
 import { ago, Dot, Portrait, ReviewChip, SectionTitle, StateChip, Tabs, useNow } from "../kit";
 import { DrawerHeader } from "./Drawer";
+import { PortBanner, PortsRow } from "./Ports";
 import { TerminalView } from "./TerminalView";
 
 
@@ -50,6 +51,7 @@ export function AgentDrawer({ id, initialTab }: { id: string; initialTab?: Agent
         )
       )}
       <BlockedRequests agent={agent} />
+      <PortBanner agent={agent} status={status} />
       <div className="border-b-[3px] border-ink px-3 py-2">
         <Tabs
           value={tab}
@@ -391,6 +393,7 @@ function SandboxTab({ snap, agent }: { snap: OfficeSnapshot; agent: AgentConfig 
             </button>
           ),
         )}
+        {row("Ports", <PortsRow agent={agent} running={snap.agents.find((a) => a.agentId === agent.id)?.session.state === "running"} />)}
         {row("HQ access", <span className="font-term text-[17px]">localhost / host.docker.internal :{snap.config.project.hqPort} (added by HQ)</span>)}
         {row(
           "Service keys",

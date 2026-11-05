@@ -1,4 +1,5 @@
 import { FitAddon } from "@xterm/addon-fit";
+import { WebLinksAddon } from "@xterm/addon-web-links";
 import { Terminal } from "@xterm/xterm";
 import { useEffect, useRef } from "react";
 import { officeActions } from "../../store/office";
@@ -21,6 +22,18 @@ const theme = {
   white: "#dfe6ff",
 };
 
+/** Opens a link from a terminal in a new tab. Only web links: a terminal's output is untrusted. */
+function openLink(uri: string) {
+  let url: URL;
+  try {
+    url = new URL(uri);
+  } catch {
+    return;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return;
+  window.open(url.href, "_blank", "noopener,noreferrer");
+}
+
 /** A real xterm.js terminal fed by the agent's (mock) output stream. */
 export function TerminalView({ agentId, autoFocus = true }: { agentId: string; autoFocus?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
@@ -39,9 +52,13 @@ export function TerminalView({ agentId, autoFocus = true }: { agentId: string; a
       scrollback: 3000,
       convertEol: false,
       allowProposedApi: false,
+      // Links a program marks as links (OSC 8), e.g. with FORCE_HYPERLINK set: the full URL, however it wraps.
+      linkHandler: { activate: (_e, uri) => openLink(uri), allowNonHttpProtocols: false },
     });
     const fit = new FitAddon();
     term.loadAddon(fit);
+    // Plain URLs in the output, including ones the terminal wrapped onto the next line.
+    term.loadAddon(new WebLinksAddon((_e, uri) => openLink(uri)));
     let unsub = () => {};
     let ro: ResizeObserver | null = null;
 
