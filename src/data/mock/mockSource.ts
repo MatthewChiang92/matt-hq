@@ -1,7 +1,7 @@
 import { agentPalette } from "../../theme/tokens";
 import type { OfficeDataSource, OfficeEvent, SimSpeed } from "../source";
 import { stackDomains } from "../stack";
-import type { AccessRequest, AgentConfig, AgentPatch, Board, NewAgentInput, ProjectConfig, SandboxSettings, WorkflowPatch } from "../types";
+import { HOST_TERMINAL, type AccessRequest, AgentConfig, AgentPatch, Board, NewAgentInput, ProjectConfig, SandboxSettings, WorkflowPatch } from "../types";
 import { defaultPresetId, presets, type Preset } from "./presets";
 import { Simulation } from "./simulation";
 import * as T from "./terminalScripts";
@@ -66,7 +66,11 @@ export function createMockSource(): OfficeDataSource {
   }
 
   /** Demo "Shell" tab: a pretend shell inside the agent's sandbox. */
-  const shellPrompt = (id: string) => `\x1b[38;2;108;240;138m${id.slice(6)}@sandbox\x1b[0m:\x1b[38;2;41;173;255m~/workspace\x1b[0m$ `;
+  const shellPrompt = (id: string) =>
+    id === HOST_TERMINAL
+      ? `\x1b[38;2;108;240;138myou@mac\x1b[0m:\x1b[38;2;41;173;255m${hostDir}\x1b[0m$ `
+      : `\x1b[38;2;108;240;138m${id.slice(6)}@sandbox\x1b[0m:\x1b[38;2;41;173;255m~/workspace\x1b[0m$ `;
+  let hostDir = "~/askwell";
   const shellOut = (id: string, data: string) => listener?.({ type: "terminal.output", agentId: id, data });
   const DEMO_SHELL: Record<string, string> = {
     ls: "README.md  app  components  lib  package.json  pnpm-lock.yaml",
@@ -74,6 +78,7 @@ export function createMockSource(): OfficeDataSource {
     "git status": "On branch p3-t02-chat-route\r\nChanges not staged for commit:\r\n  modified:   app/api/chat/route.ts",
     "node -v": "v22.11.0",
     whoami: "agent",
+    "npm run dev": "\x1b[1m  ▲ Next.js 15.1\x1b[0m\r\n  - Local:   http://localhost:3000\r\n\r\n ✓ Ready in 1.2s",
   };
   function demoShell(id: string, data: string) {
     let buf = inputBuf.get(id) ?? "";
@@ -82,7 +87,7 @@ export function createMockSource(): OfficeDataSource {
         const cmd = buf.trim();
         buf = "";
         shellOut(id, "\r\n");
-        if (cmd) shellOut(id, `${DEMO_SHELL[cmd] ?? `(demo shell) ${cmd}: try ls, pwd, git status, node -v`}\r\n`);
+        if (cmd) shellOut(id, `${DEMO_SHELL[cmd] ?? `(demo shell) ${cmd}: try ls, pwd, git status, node -v, npm run dev`}\r\n`);
         shellOut(id, shellPrompt(id));
       } else if (ch === "\x7f") {
         if (buf.length) (buf = buf.slice(0, -1)), shellOut(id, "\b \b");
@@ -425,6 +430,35 @@ export function createMockSource(): OfficeDataSource {
       openShells.add(tid);
       inputBuf.delete(tid);
       shellOut(tid, `\x1b[2m$ sbx exec -it hq-mock-${id} bash   (demo)\x1b[0m\r\n${shellPrompt(tid)}`);
+    },
+
+    openHostShell(dir, fresh) {
+      const want = dir.trim() || "~/askwell";
+      if (openShells.has(HOST_TERMINAL) && !fresh && want === hostDir) return;
+      if (openShells.has(HOST_TERMINAL)) shellOut(HOST_TERMINAL, "\x1bc");
+      hostDir = want;
+      openShells.add(HOST_TERMINAL);
+      inputBuf.delete(HOST_TERMINAL);
+      shellOut(HOST_TERMINAL, `\x1b[2m$ zsh in ${hostDir}   (demo)\x1b[0m\r\n${shellPrompt(HOST_TERMINAL)}`);
+    },
+
+    closeHostShell() {
+      openShells.delete(HOST_TERMINAL);
+    },
+
+    forwardPort(agentId, port) {
+      const st = world.snap.sbx.agents[agentId];
+      if (!st || st.ports?.some((p) => p.sandbox === port)) return;
+      st.ports = [...(st.ports ?? []), { sandbox: port, host: port }].sort((a, b) => a.sandbox - b.sandbox);
+      world.emit({ type: "sbx.updated", sbx: structuredClone(world.snap.sbx) });
+      world.activity("config", agentId, `Forwarded port ${port} from ${world.name(agentId)}'s sandbox to localhost:${port} on this machine. (demo)`);
+    },
+
+    unforwardPort(agentId, port) {
+      const st = world.snap.sbx.agents[agentId];
+      if (!st) return;
+      st.ports = (st.ports ?? []).filter((p) => p.sandbox !== port);
+      world.emit({ type: "sbx.updated", sbx: structuredClone(world.snap.sbx) });
     },
 
     closeShell(id) {

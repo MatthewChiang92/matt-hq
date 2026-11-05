@@ -279,6 +279,16 @@ export interface SbxAgentState {
   syncError: string | null;
   /** Requests the sandbox blocked, waiting in sbx's approval queue (`sbx policy approval ls`). */
   approvals: SbxApproval[];
+  /** Sandbox ports reachable from this machine (`sbx ports`), e.g. for a CLI's sign-in callback. */
+  ports?: SbxPort[];
+}
+
+/** Terminal id of the Terminal panel: your own shell on this machine, not in a sandbox. */
+export const HOST_TERMINAL = "shell:@host";
+
+export interface SbxPort {
+  sandbox: number;
+  host: number;
 }
 
 export interface SbxApproval {

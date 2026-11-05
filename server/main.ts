@@ -60,8 +60,16 @@ async function main() {
   sessions.onSandboxReady = (id) => {
     void sbx.syncRules(id);
     void mcp.attachAll(id);
+    void sbx.refreshPorts(id);
   };
-  sessions.onSandboxRemoved = (id) => mcp.forget(id);
+  sessions.onSessionDown = ((down) => (id: string) => {
+    down(id);
+    void sbx.refreshPorts(id);
+  })(sessions.onSessionDown);
+  sessions.onSandboxRemoved = (id) => {
+    mcp.forget(id);
+    void sbx.refreshPorts(id);
+  };
   void sbx.refresh();
   void mcp.refresh();
   const planner = new Planner(hub, inbox);

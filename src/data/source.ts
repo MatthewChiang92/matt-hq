@@ -82,6 +82,12 @@ export interface OfficeDataSource {
   /** Opens a plain shell in the agent's sandbox (or folder); output on terminal id `shell:<id>`. */
   openShell(id: string): void;
   closeShell(id: string): void;
+  /** The Terminal panel: your own shell on this machine in `dir` (empty = the repo); terminal id `shell:@host`. */
+  openHostShell(dir: string, fresh?: boolean): void;
+  closeHostShell(): void;
+  /** Makes a port inside the agent's sandbox reachable at localhost:<port> on this machine. */
+  forwardPort(agentId: string, port: number): void;
+  unforwardPort(agentId: string, port: number): void;
   /** Removes and recreates the agent's sandbox (e.g. to apply new CPU/memory). The folder is kept. */
   recreateSandbox(id: string): void;
 

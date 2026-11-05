@@ -1,6 +1,8 @@
 // Terminal output is high-frequency, so it lives outside React state:
 // a capped buffer per agent plus a tiny pub/sub. Fed only by the office store.
 
+import { clearPorts, notePorts } from "./ports";
+
 type Listener = (data: string) => void;
 
 const MAX_CHARS = 60_000;
@@ -16,6 +18,7 @@ export function appendTerminal(agentId: string, data: string) {
     next = next.slice(cut === -1 ? next.length - MAX_CHARS : cut + 1);
   }
   buffers.set(agentId, next);
+  notePorts(agentId, data);
   listeners.get(agentId)?.forEach((fn) => fn(data));
 }
 
@@ -32,5 +35,6 @@ export function subscribeTerminal(agentId: string, fn: Listener): () => void {
 
 export function clearTerminals() {
   buffers.clear();
+  clearPorts();
   listeners.forEach((set) => set.forEach((fn) => fn("\x1bc"))); // full terminal reset
 }

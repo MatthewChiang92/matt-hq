@@ -3,11 +3,12 @@
 // checklist's "Run in terminal" helper.
 
 import { spawn as spawnPty, type IPty } from "@lydell/node-pty";
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, rmSync, statSync } from "node:fs";
+import { homedir } from "node:os";
 import { stackSkills } from "../src/data/stack";
 import { hasHqSkills, prepareSkills } from "./skills";
 import { resolve, sep } from "node:path";
-import type { AgentCli, SetupCheckId, WorkspaceInfo } from "../src/data/types";
+import { HOST_TERMINAL, type AgentCli, type SetupCheckId, type WorkspaceInfo } from "../src/data/types";
 import { adapters, localBinary } from "./adapters";
 import type { Hub } from "./hub";
 import { sessionBackend, type LaunchSpec, type TermHandle } from "./backends";
@@ -21,6 +22,17 @@ import { POLICY_NOT_INITIALIZED, policyVerdict, runSetupChecks } from "./setup";
 import { ensureWorkspace, workspaceFor } from "./workspace";
 
 const TERM_ENV = { ...process.env, TERM: "xterm-256color", COLORTERM: "truecolor" } as Record<string, string>;
+/**
+ * Shells you type in (Shell tab, Terminal panel): CLIs print links as real links (OSC 8), so a long
+ * URL stays one clickable link instead of being cut across lines. Not for agent sessions: tmux
+ * drops OSC 8 links unless the outer terminal declares support, which would hide the URL.
+ */
+const SHELL_ENV = { ...TERM_ENV, FORCE_HYPERLINK: "1" };
+/**
+ * sbx's opener inside a sandbox: sends the URL to this machine's browser. npm's `open` package
+ * (used by many CLIs) ignores xdg-open on PATH and only uses it when BROWSER says so.
+ */
+const SANDBOX_BROWSER = "/usr/local/bin/xdg-open";
 
 // What the agents' screens show (Claude Code and Codex).
 const BUSY = /esc to interrupt/i; // the footer while a turn runs
@@ -29,6 +41,9 @@ const DIALOG = /Enter to select|↑\/↓ to navigate|Do you want to (proceed|mak
 const PROMPT_READY = /⏵⏵|\? for shortcuts|Ask Codex to do anything/; // the input prompt is up
 const SCREEN_QUIET_MS = 4000; // only second-guess hooks after this much silence
 const STALE_WORKING_MS = 15_000; // "working" with an idle screen this long = a missed Stop
+
+/** Starts bash (else sh) in a sandbox, with links and browser opening set up (see SHELL_ENV, SANDBOX_BROWSER). */
+const SANDBOX_SHELL = `export FORCE_HYPERLINK=1; [ -x ${SANDBOX_BROWSER} ] && export BROWSER=${SANDBOX_BROWSER}; command -v bash >/dev/null && exec bash -l || exec sh -l`;
 
 export class Sessions {
   readonly backend = sessionBackend();
@@ -114,7 +129,7 @@ export class Sessions {
           const { cpus, memoryGb } = agent.sandbox.resources;
           const isNew = !(await this.sandboxExists(name));
           const size = !isNew ? [] : [...(cpus ? ["--cpus", String(cpus)] : []), ...(memoryGb ? ["--memory", `${Math.round(memoryGb * 1024)}m`] : [])];
-          const env = envFile ? ["--env-file", envFile] : [];
+          const env = [...(envFile ? ["--env-file", envFile] : []), "-e", `BROWSER=${SANDBOX_BROWSER}`];
           const args = launch.args.length ? ["--", ...launch.args] : [];
           spec = { file: "sbx", args: ["run", "--name", name, ...size, ...env, launch.sbxAgent, dir, ...args], envFile: null };
         }
@@ -549,7 +564,7 @@ export class Sessions {
         // bash when the image has it, else sh; start in the agent's folder (same path inside the sandbox).
         // The agent's app variables too, so what you check here matches what the agent sees.
         const env = this.envFileFor(agentId);
-        ({ file, args } = await resolveCommand("sbx", ["exec", "-it", ...(env ? ["--env-file", env] : []), ...(win ? [] : ["-w", dir]), name, "sh", "-c", "command -v bash >/dev/null && exec bash -l || exec sh -l"]));
+        ({ file, args } = await resolveCommand("sbx", ["exec", "-it", ...(env ? ["--env-file", env] : []), ...(win ? [] : ["-w", dir]), name, "sh", "-c", SANDBOX_SHELL]));
         banner = `sbx exec -it ${name} bash`;
       } else {
         const sh = process.env.SHELL || "/bin/sh";
@@ -561,7 +576,7 @@ export class Sessions {
       }
       if (this.shellGen.get(id) !== gen || this.shells.has(id) || this.hub.status(agentId)?.session.state !== "running") return;
       const size = this.sizes.get(id) ?? { cols: 100, rows: 30 };
-      pty = spawnPty(file, args, { name: "xterm-256color", cols: size.cols, rows: size.rows, cwd: dir, env: TERM_ENV });
+      pty = spawnPty(file, args, { name: "xterm-256color", cols: size.cols, rows: size.rows, cwd: dir, env: SHELL_ENV });
     } catch (err) {
       // e.g. sbx not on PATH: show it in the Shell tab instead of failing silently.
       return this.hub.terminal(id, `\x1b[31mCouldn't open a shell: ${err instanceof Error ? err.message : String(err)}\x1b[0m\r\n`);
@@ -588,6 +603,61 @@ export class Sessions {
     this.closing.add(pty);
     pty.kill();
     this.shells.delete(id);
+  }
+
+  /**
+   * The Terminal panel: your own shell on this machine (not in a sandbox), in the folder you pick.
+   * Reopening with the same folder keeps the running shell; `fresh` or a new folder starts a new one.
+   */
+  openHostShell(dir: string, fresh: boolean) {
+    const id = HOST_TERMINAL;
+    const want = this.hostDir(dir);
+    if (!want) return this.hub.terminal(id, `\x1b[31mNo such folder: ${dir}\x1b[0m\r\n`);
+    if (this.shells.has(id) && !fresh && want === this.hostShellDir) return;
+    // A new shell starts on a clean screen.
+    if (this.shells.has(id)) this.hub.terminal(id, "\x1bc");
+    this.closeHostShell();
+    const win = process.platform === "win32";
+    const sh = win ? "powershell.exe" : process.env.SHELL || "/bin/sh";
+    const size = this.sizes.get(id) ?? { cols: 100, rows: 30 };
+    let pty: IPty;
+    try {
+      pty = spawnPty(sh, win ? ["-NoLogo"] : ["-l"], { name: "xterm-256color", cols: size.cols, rows: size.rows, cwd: want, env: SHELL_ENV });
+    } catch (err) {
+      return this.hub.terminal(id, `\x1b[31mCouldn't open a shell: ${err instanceof Error ? err.message : String(err)}\x1b[0m\r\n`);
+    }
+    this.shells.set(id, pty);
+    this.hostShellDir = want;
+    this.hub.terminal(id, `\x1b[2m$ ${sh} in ${want}\x1b[0m\r\n`);
+    pty.onData((d) => this.hub.terminal(id, d));
+    pty.onExit(({ exitCode }) => {
+      if (this.shells.get(id) === pty) this.shells.delete(id);
+      if (this.closing.has(pty)) return;
+      this.hub.terminal(id, `\r\n\x1b[2m[shell closed${exitCode ? ` (exit ${exitCode})` : ""}. Press "New shell" to open another.]\x1b[0m\r\n`);
+    });
+  }
+
+  closeHostShell() {
+    const pty = this.shells.get(HOST_TERMINAL);
+    this.hostShellDir = null;
+    if (!pty) return;
+    this.closing.add(pty);
+    pty.kill();
+    this.shells.delete(HOST_TERMINAL);
+  }
+
+  private hostShellDir: string | null = null;
+
+  /** An existing folder from what you typed ("~" works); the repo when empty. */
+  private hostDir(dir: string): string | null {
+    const raw = dir.trim();
+    if (!raw) return this.hub.repo.root;
+    const full = resolve(this.hub.repo.root, raw === "~" || raw.startsWith("~/") ? homedir() + raw.slice(1) : raw);
+    try {
+      return statSync(full).isDirectory() ? full : null;
+    } catch {
+      return null;
+    }
   }
 
   shutdown() {

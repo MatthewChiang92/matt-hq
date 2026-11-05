@@ -7,6 +7,7 @@ What HQ does behind the office: where agents work, how they talk, what reaches G
 - [Messages between agents](#messages-between-agents)
 - [GitHub and reviews](#github-and-reviews)
 - [Sandboxes and network access](#sandboxes-and-network-access)
+- [Terminals, links and ports](#terminals-links-and-ports)
 - [Action items](#action-items)
 - [Your stack](#your-stack)
 - [MCP servers](#mcp-servers)
@@ -61,6 +62,15 @@ Each agent in Sandbox mode runs in its own [Docker Sandbox](https://docs.docker.
 - **Blocked requests** the agent didn't ask about are listed too: the agent's card shows "N blocked", and its drawer lists them with **Allow / Dismiss**.
 - **Allowing a website** adds a rule for that sandbox only. Your base policy is never touched, and HQ only removes rules it added.
 - **CPU and memory** are set in Settings → Sandbox. A sandbox gets its size when it's created, so after changing it press **Recreate sandbox**. Stop and Start keeps the old size. Recreating keeps the agent's folder and code but clears anything installed inside the sandbox.
+
+## Terminals, links and ports
+
+- **Resize any panel.** Drag a panel's left edge to make it wider (HQ remembers the width in this browser; double-click the edge to reset), or press the square button to fill the screen. Terminals resize with it, so full-screen tools that need more rows fit.
+- **Shell tab.** A shell inside the agent's sandbox (or its folder in Local mode), beside the agent.
+- **Terminal** (top bar). Your own shell on this machine, not in a sandbox: in your repo, an agent's folder, or any folder you type. Be careful in an agent's folder while it's working: it's the same copy of the repo the agent is editing.
+- **Links** in any terminal open in a new tab when you click them, including long URLs that wrap onto the next line.
+- **Opening the browser.** Tools in a sandbox that open a web page (for example a CLI sign-in) open it in your browser.
+- **Ports.** When a program in the Shell tab prints a `localhost:<port>` address, HQ offers to **Forward port**: then `localhost:<port>` on your machine reaches the sandbox. CLI sign-ins that redirect your browser back to `localhost` need this. You can also forward any port, and stop forwarding, in the agent's **Sandbox** tab. The program inside the sandbox must listen on all addresses (`0.0.0.0`), not only `127.0.0.1`.
 
 ## Action items
 
