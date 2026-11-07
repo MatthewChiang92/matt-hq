@@ -26,7 +26,6 @@ export function mergeByNotice(by: "human" | "lead", waiting: number[]): string {
 
 const MIN_POLL_MS = 20_000; // never more often than this (nudges included)
 const MAX_POLL_MS = 5 * 60_000;
-const HQ_BUDGET = 1200; // GraphQL points per hour HQ may use; the rest of the 5,000 is left for the agents' gh commands
 const LOW_REMAINING = 800; // below this, poll at most every 2 minutes
 const label = { coderabbit: "CodeRabbit", greptile: "Greptile", copilot: "Copilot", human: "The reviewer", custom: "The review check" } as const;
 
@@ -41,7 +40,8 @@ export class GitHubSync {
   private interval = MIN_POLL_MS;
   private pausedUntil = 0;
 
-  constructor(private hub: Hub, private planner: Planner, private repo: string | null) {}
+  /** `budget`: this project's share of the GraphQL points per hour HQ may use (see projects.ts). */
+  constructor(private hub: Hub, private planner: Planner, private repo: string | null, private budget: () => number) {}
 
   start() {
     if (!this.repo) {
@@ -88,7 +88,7 @@ export class GitHubSync {
   /** Poll often enough to stay within HQ's share of the budget; slow down when it runs low. */
   private pace(rate: { cost: number; remaining: number } | null) {
     if (!rate) return;
-    const forBudget = Math.ceil((Math.max(1, rate.cost) * 3_600_000) / HQ_BUDGET);
+    const forBudget = Math.ceil((Math.max(1, rate.cost) * 3_600_000) / this.budget());
     const low = rate.remaining < LOW_REMAINING ? 120_000 : 0;
     this.interval = Math.min(MAX_POLL_MS, Math.max(MIN_POLL_MS, forBudget, low));
   }

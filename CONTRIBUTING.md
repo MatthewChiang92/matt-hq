@@ -1,14 +1,14 @@
-# Contributing to JSM HQ
+# Contributing to Matt HQ
 
 ## Run it from source
 
 Needs Node.js 20+ and pnpm 10 or 11 (`corepack enable` gets you pnpm).
 
 ```bash
-git clone https://github.com/jsmastery-pro/jsm-hq && cd jsm-hq
+git clone https://github.com/MatthewChiang92/matt-hq && cd matt-hq
 pnpm install
 pnpm dev                                   # the UI with fake data, no agents
-HQ_REPO=~/developer/hq-test pnpm dev:hq    # the real HQ server + UI, with hot reload
+pnpm dev:hq                                # the real HQ server + UI, with hot reload
 ```
 
 `pnpm dev` is a demo with fake data: nothing runs and nothing leaves the browser. To test a change for real, use `pnpm dev:hq` or `pnpm hq` against a throwaway repo.
@@ -16,11 +16,11 @@ HQ_REPO=~/developer/hq-test pnpm dev:hq    # the real HQ server + UI, with hot r
 | Command | Does |
 | --- | --- |
 | `pnpm dev` | Demo UI with fake data at http://localhost:5173 |
-| `pnpm dev:hq` | Real HQ server + UI with hot reload (`HQ_REPO=<path>`) |
-| `pnpm hq` | Builds the UI, then runs HQ like a release (`--repo <path> --port 7420`) |
+| `pnpm dev:hq` | Real HQ server + UI with hot reload (`HQ_REPO=<path>` also adds a project) |
+| `pnpm hq` | Builds the UI, then runs HQ like a release (`--repo <path>` adds a project, `--port 7420`) |
 | `pnpm build` | Type-checks, builds the UI to `dist/` and the server to `dist-server/` |
 | `pnpm typecheck` | Type-check only |
-| `npm pack` | Builds the npm tarball, to test it before publishing |
+| `npm pack` | Builds the tarball the CI smoke test installs |
 
 Start HQ with `HQ_DEBUG=1` to log why a queued message is waiting.
 
@@ -33,8 +33,8 @@ src/
   office/    The PixiJS pixel office: layout, sprites, agents, belt
   ui/        Top bar, team panel, activity, drawers, settings, setup checklist, welcome
 server/      Local HQ server: setup checks, workspaces, sessions (tmux, or HQ-run on Windows), sbx, hooks, Team MCP, GitHub
-bin/         The jsm-hq command
-docs/        User guides, and the product spec (jsmhq-context.md)
+bin/         The matt-hq command
+docs/        User guides, and the product spec (matthq-context.md)
 context/     Implementation plans
 ```
 
@@ -44,7 +44,4 @@ HQ calls the `sbx` CLI and reads its output. sbx 0.48 changed several outputs (f
 
 ## Releasing
 
-1. Bump `version` in `package.json` and merge to `main`.
-2. From a clean, up-to-date `main`, run `npm publish`. It builds first.
-
-Only members of the `therealjsmastery` npm org can publish. The README on npm updates only when a new version is published.
+Matt HQ isn't published to npm (`private` in `package.json`). Run it from source; see the README.

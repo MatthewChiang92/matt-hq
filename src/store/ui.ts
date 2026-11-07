@@ -39,9 +39,10 @@ interface UiState {
   /** Side drawer width in px, remembered per browser; `maximized` fills the screen. */
   drawerWidth: number;
   drawerMaximized: boolean;
+  addProjectOpen: boolean;
 }
 
-const WIDTH_KEY = "jsmhq.drawerWidth";
+const WIDTH_KEY = "matthq.drawerWidth";
 export const DRAWER_MIN = 420;
 export const DRAWER_DEFAULT = 520;
 
@@ -70,6 +71,7 @@ export const useUi = create<UiState>(() => ({
   setupOpen: false,
   drawerWidth: savedWidth(),
   drawerMaximized: false,
+  addProjectOpen: false,
 }));
 
 let nonce = 0;
@@ -138,6 +140,16 @@ export const ui = {
   },
   toggleDrawerMaximized() {
     useUi.setState((s) => ({ drawerMaximized: !s.drawerMaximized }));
+  },
+  openAddProject() {
+    useUi.setState({ addProjectOpen: true });
+  },
+  closeAddProject() {
+    useUi.setState({ addProjectOpen: false });
+  },
+  /** Another project is showing: close everything that pointed into the last one. */
+  projectChanged() {
+    useUi.setState({ drawer: null, settings: null, hover: null, planBoardId: null, setupOpen: false, addProjectOpen: false });
   },
   toggleDebug() {
     useUi.setState((s) => ({ debugOpen: !s.debugOpen }));

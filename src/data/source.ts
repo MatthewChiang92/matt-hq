@@ -21,6 +21,8 @@ import type {
   WelcomeInput,
   WorkspaceInfo,
   ProjectConfig,
+  ProjectCandidate,
+  ProjectSummary,
   PullRequest,
   SandboxSettings,
   Task,
@@ -46,7 +48,12 @@ export type OfficeEvent =
   | { type: "terminal.output"; agentId: string; data: string }
   | { type: "access.updated"; request: AccessRequest }
   | { type: "mcp.updated"; mcp: McpState }
-  | { type: "action.updated"; item: ActionItem };
+  | { type: "action.updated"; item: ActionItem }
+  // HQ-wide, not about one project:
+  | { type: "projects"; projects: ProjectSummary[]; candidates: ProjectCandidate[] }
+  /** The project this browser now shows (null: none in HQ yet). Its snapshot follows. */
+  | { type: "project.selected"; id: string | null }
+  | { type: "project.error"; text: string };
 
 export type SimSpeed = 1 | 2 | 4;
 
@@ -135,6 +142,14 @@ export interface OfficeDataSource {
   updateStack(stack: StackConfig | null): void;
   /** Answers an agent's request_access: allow for that agent, for every agent, or deny. */
   resolveAccess(requestId: string, decision: AccessDecision): void;
+
+  // projects in HQ
+  /** Shows another project in this browser. */
+  selectProject(id: string): void;
+  /** Adds the git repo at `path` to HQ and shows it. */
+  addProject(path: string): void;
+  /** Takes a project out of HQ. Its repo, folders and sandboxes are kept. Refused while its agents run. */
+  removeProject(id: string): void;
 
   /** Finishes first-run setup: saves the project's team and review tool. */
   completeWelcome(input: WelcomeInput): void;

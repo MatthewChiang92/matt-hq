@@ -8,6 +8,7 @@ import { ActivityFeed } from "./ui/hud/ActivityFeed";
 import { ConnectionBanner } from "./ui/hud/ConnectionBanner";
 import { SetupChecklist } from "./ui/setup/SetupChecklist";
 import { WelcomeModal } from "./ui/setup/WelcomeModal";
+import { AddProjectModal } from "./ui/setup/AddProjectModal";
 import { TeamPanel } from "./ui/hud/TeamPanel";
 import { Tooltip } from "./ui/hud/Tooltip";
 import { TopBar } from "./ui/hud/TopBar";
@@ -67,6 +68,8 @@ export function App() {
   const ready = useOffice((s) => s.snap !== null);
   const setupOpen = useUi((s) => s.setupOpen);
   const welcome = useOffice((s) => s.live && !!s.snap?.welcome);
+  const noProjects = useOffice((s) => s.projects !== null && s.projectId === null);
+  const addProjectOpen = useUi((s) => s.addProjectOpen);
 
   return (
     <>
@@ -84,6 +87,7 @@ export function App() {
           <Tooltip />
         </>
       )}
+      {(noProjects || addProjectOpen) && <AddProjectModal required={noProjects} />}
     </>
   );
 }

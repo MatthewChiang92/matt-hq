@@ -9,9 +9,12 @@ export const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "") || "project";
 
-/** ~/.jsmhq/<project>/ — HQ's per-project home (agent folders, tokens). */
+/** ~/.matthq/ — HQ's home: the project list, and a folder per project. */
+export const hqHome = () => join(homedir(), ".matthq");
+
+/** ~/.matthq/<project>/ — HQ's per-project home (agent folders, tokens). */
 export function projectHome(projectSlug: string): string {
-  const dir = join(homedir(), ".jsmhq", projectSlug);
+  const dir = join(hqHome(), projectSlug);
   mkdirSync(dir, { recursive: true });
   return dir;
 }
@@ -39,9 +42,10 @@ export function agentToken(projectSlug: string): string {
  * Browser token, required by the UI's WebSocket. New on every start — except in
  * dev, where it survives server reloads so the open tab keeps working.
  */
-export function browserToken(projectSlug: string, dev: boolean): string {
+export function browserToken(dev: boolean): string {
   if (!dev) return randomBytes(24).toString("hex");
-  const file = join(projectHome(projectSlug), "dev-browser-token");
+  mkdirSync(hqHome(), { recursive: true });
+  const file = join(hqHome(), "dev-browser-token");
   if (existsSync(file)) return readFileSync(file, "utf8").trim();
   const tok = randomBytes(24).toString("hex");
   writeFileSync(file, tok, { mode: 0o600 });

@@ -31,8 +31,32 @@ function FontPicker() {
   );
 }
 
+/** Takes the project out of HQ; asks for a second click first. */
+function RemoveProject({ id, name }: { id: string; name: string }) {
+  const [sure, setSure] = useState(false);
+  const error = useOffice((s) => s.projectError);
+  return (
+    <section>
+      <SectionTitle>Remove from HQ</SectionTitle>
+      <p className="mb-2 text-[13px] text-muted">The repo, agent folders and sandboxes are kept. Stop its agents first.</p>
+      <button
+        className="btn text-[14px]"
+        style={sure ? { background: "#ff004d", color: "#fff" } : undefined}
+        onClick={() => {
+          if (sure) officeActions.removeProject(id);
+          setSure(!sure);
+        }}
+      >
+        {sure ? `Remove ${name}?` : "Remove project"}
+      </button>
+      {error && <p className="mt-1 text-[13px] text-red">{error}</p>}
+    </section>
+  );
+}
+
 export function ProjectSettings() {
   const project = useOffice((s) => s.snap?.config.project);
+  const live = useOffice((s) => s.live);
   if (!project) return null;
   return (
     <div className="flex flex-col gap-5">
@@ -74,9 +98,10 @@ export function ProjectSettings() {
         <SectionTitle>Plan</SectionTitle>
         <Toggle checked={!!project.exportPlan} onChange={(v) => officeActions.updateProject({ exportPlan: v })} label="Export plan to docs/plan.md" />
         <p className="mt-1 text-[13px] text-muted">
-          HQ keeps the plan in .jsmhq/plan.json. With this on, it also writes a readable copy to docs/plan.md every time the plan changes, so you can commit it or read it on GitHub. Edits to that file are overwritten.
+          HQ keeps the plan in .matthq/plan.json. With this on, it also writes a readable copy to docs/plan.md every time the plan changes, so you can commit it or read it on GitHub. Edits to that file are overwritten.
         </p>
       </section>
+      {live && <RemoveProject id={project.id} name={project.name} />}
       <section className="text-[13px] text-muted">
         <SectionTitle>Security</SectionTitle>
         <ul className="list-disc pl-5">

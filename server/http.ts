@@ -1,6 +1,6 @@
 // 127.0.0.1 only. Routes:
-//   GET  /ws?token=…            browser WebSocket (browser token)
-//   POST /hook/<agent>/<event>  Claude Code hooks (agent token)
+//   GET  /ws?token=…&project=…  browser WebSocket (browser token); shows one project at a time
+//   POST /hook/<agent>/<event>  Claude Code hooks (agent token, which also says which project)
 //   GET  /api/health
 //   GET  /*                     the built UI (dist/), when present
 
@@ -11,10 +11,9 @@ import { timingSafeEqual } from "node:crypto";
 import { WebSocketServer, type WebSocket } from "ws";
 import type { OfficeEvent } from "../src/data/source";
 import { handleHook } from "./hooks";
-import type { Hub } from "./hub";
-import type { Inbox } from "./inbox";
 import { handleMcp } from "./mcp";
-import type { Planner } from "./planner";
+import type { ProjectRuntime } from "./project";
+import type { Projects } from "./projects";
 import { log } from "./lib/log";
 
 const MIME: Record<string, string> = {
@@ -43,15 +42,11 @@ function readBody(req: IncomingMessage, limit = 256 * 1024): Promise<string> {
 }
 
 interface Options {
-  hub: Hub;
-  inbox: Inbox;
-  planner: Planner;
+  projects: Projects;
   port: number;
   browserToken: string;
-  agentToken: string;
   distDir: string | null;
   allowedOrigins: string[];
-  commands: Record<string, (...args: unknown[]) => unknown>;
 }
 
 export function startHttp(o: Options) {
@@ -62,14 +57,16 @@ export function startHttp(o: Options) {
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
+    const auth = req.headers.authorization ?? "";
+    const project = () => o.projects.byAgentToken((token) => safeEqual(auth, `Bearer ${token}`));
 
     if (req.method === "POST" && url.pathname.startsWith("/hook/")) {
-      const auth = req.headers.authorization ?? "";
-      if (!safeEqual(auth, `Bearer ${o.agentToken}`)) return send(res, 401, "unauthorized");
+      const rt = project();
+      if (!rt) return send(res, 401, "unauthorized");
       const [, , agentId, event] = url.pathname.split("/");
       try {
         const body = await readBody(req);
-        const r = handleHook(o.hub, o.inbox, decodeURIComponent(agentId ?? ""), event ?? "", body ? JSON.parse(body) : {});
+        const r = handleHook(rt.hub, rt.inbox, decodeURIComponent(agentId ?? ""), event ?? "", body ? JSON.parse(body) : {});
         if (!r.ok) return send(res, 404, "");
         if (r.response) return send(res, 200, JSON.stringify(r.response), "application/json");
         res.writeHead(204);
@@ -81,13 +78,13 @@ export function startHttp(o: Options) {
 
     // Team MCP: agent token + the agent's id (written into its MCP config by HQ).
     if (url.pathname === "/mcp") {
-      const auth = req.headers.authorization ?? "";
+      const rt = project();
       const agentId = String(req.headers["x-hq-agent"] ?? "");
-      if (!safeEqual(auth, `Bearer ${o.agentToken}`) || !o.hub.cfg(agentId)) return send(res, 401, "unauthorized");
+      if (!rt || !rt.hub.cfg(agentId)) return send(res, 401, "unauthorized");
       if (req.method === "GET" || req.method === "DELETE") return send(res, 405, "stateless server");
       try {
         const raw = await readBody(req, 1024 * 1024);
-        return await handleMcp(o.hub, o.planner, agentId, req, res, raw ? JSON.parse(raw) : undefined);
+        return await handleMcp(rt.hub, rt.planner, agentId, req, res, raw ? JSON.parse(raw) : undefined);
       } catch {
         return res.headersSent ? void res.end() : send(res, 400, "bad request");
       }
@@ -115,24 +112,61 @@ export function startHttp(o: Options) {
       socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
       return socket.destroy();
     }
-    wss.handleUpgrade(req, socket, head, (ws) => onClient(ws));
+    wss.handleUpgrade(req, socket, head, (ws) => onClient(ws, url.searchParams.get("project")));
   });
 
-  function onClient(ws: WebSocket) {
+  /** Each browser sees one project at a time; its commands go to that project. */
+  function onClient(ws: WebSocket, wanted: string | null) {
     const sendEvent = (e: OfficeEvent) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(e));
-    sendEvent({ type: "snapshot", snapshot: o.hub.snap });
-    const unsub = o.hub.subscribe(sendEvent);
+    let current: ProjectRuntime | null = null;
+    let unsub = () => {};
+    const select = (id: string | null) => {
+      unsub();
+      current = (id && o.projects.runtimes.get(id)) || o.projects.runtimes.get(o.projects.summaries()[0]?.id ?? "") || null;
+      unsub = current ? current.hub.subscribe(sendEvent) : () => {};
+      sendEvent({ type: "project.selected", id: current?.id ?? null });
+      if (current) sendEvent({ type: "snapshot", snapshot: current.hub.snap });
+    };
+    const fail = (err: unknown) => sendEvent({ type: "project.error", text: err instanceof Error ? err.message : String(err) });
+
+    sendEvent(o.projects.event());
+    select(wanted);
+    const offProjects = o.projects.subscribe((e) => {
+      sendEvent(e);
+      // Its project was removed (maybe from another tab), or the first one was added.
+      if (current ? !o.projects.runtimes.has(current.id) : o.projects.runtimes.size) select(null);
+    });
+
     ws.on("message", async (raw) => {
       try {
         const msg = JSON.parse(String(raw)) as { cmd?: string; args?: unknown[] };
-        const fn = msg.cmd ? o.commands[msg.cmd] : undefined;
+        const args = Array.isArray(msg.args) ? msg.args : [];
+        const arg = typeof args[0] === "string" ? args[0].slice(0, 4096) : "";
+        if (msg.cmd === "selectProject") return select(arg);
+        if (msg.cmd === "addProject") {
+          const rt = await o.projects.add(arg).catch(fail);
+          if (rt) select(rt.id);
+          return;
+        }
+        if (msg.cmd === "removeProject") {
+          try {
+            o.projects.remove(arg);
+          } catch (err) {
+            fail(err);
+          }
+          return;
+        }
+        const fn = msg.cmd ? current?.commands[msg.cmd] : undefined;
         if (!fn) return log.warn("unknown command", msg.cmd);
-        await fn(...(Array.isArray(msg.args) ? msg.args : []));
+        await fn(...args);
       } catch (err) {
         log.warn("command failed:", err instanceof Error ? err.message : err);
       }
     });
-    ws.on("close", () => unsub());
+    ws.on("close", () => {
+      unsub();
+      offProjects();
+    });
   }
 
   return new Promise<typeof server>((resolve, reject) => {

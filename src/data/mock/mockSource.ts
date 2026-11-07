@@ -74,7 +74,7 @@ export function createMockSource(): OfficeDataSource {
   const shellOut = (id: string, data: string) => listener?.({ type: "terminal.output", agentId: id, data });
   const DEMO_SHELL: Record<string, string> = {
     ls: "README.md  app  components  lib  package.json  pnpm-lock.yaml",
-    pwd: "/Users/you/.jsmhq/askwell/workspace",
+    pwd: "/Users/you/.matthq/askwell/workspace",
     "git status": "On branch p3-t02-chat-route\r\nChanges not staged for commit:\r\n  modified:   app/api/chat/route.ts",
     "node -v": "v22.11.0",
     whoami: "agent",
@@ -470,6 +470,11 @@ export function createMockSource(): OfficeDataSource {
     completeWelcome() {
       // The demo never shows the welcome screen.
     },
+
+    // The demo has one project.
+    selectProject() {},
+    addProject() {},
+    removeProject() {},
 
     updateStack(stack) {
       if (stack) world.snap.config.stack = structuredClone(stack);

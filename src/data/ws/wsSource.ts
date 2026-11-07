@@ -3,7 +3,8 @@
 
 import type { OfficeDataSource, OfficeEvent } from "../source";
 
-export function createWsSource(token: string): OfficeDataSource {
+/** `project`: the one to show first; reconnects come back to whichever is showing. */
+export function createWsSource(token: string, project: string | null): OfficeDataSource {
   let ws: WebSocket | null = null;
   const queue: string[] = [];
 
@@ -25,7 +26,8 @@ export function createWsSource(token: string): OfficeDataSource {
         if (!active) return;
         onStatus?.(retry ? "reconnecting" : "connecting");
         const proto = location.protocol === "https:" ? "wss" : "ws";
-        const sock = new WebSocket(`${proto}://${location.host}/ws?token=${encodeURIComponent(token)}`);
+        const which = project ? `&project=${encodeURIComponent(project)}` : "";
+        const sock = new WebSocket(`${proto}://${location.host}/ws?token=${encodeURIComponent(token)}${which}`);
         socket = sock;
         let opened = false;
         sock.onopen = () => {
@@ -39,7 +41,9 @@ export function createWsSource(token: string): OfficeDataSource {
         sock.onmessage = (m) => {
           if (!active) return;
           try {
-            onEvent(JSON.parse(String(m.data)) as OfficeEvent);
+            const e = JSON.parse(String(m.data)) as OfficeEvent;
+            if (e.type === "project.selected") project = e.id;
+            onEvent(e);
           } catch {
             /* ignore malformed frames */
           }
@@ -103,6 +107,9 @@ export function createWsSource(token: string): OfficeDataSource {
     setAgentMcp: (agentId, names) => send("setAgentMcp", agentId, names),
     answerApproval: (agentId, approvalId, decision) => send("answerApproval", agentId, approvalId, decision),
     resolveAccess: (requestId, decision) => send("resolveAccess", requestId, decision),
+    selectProject: (id) => send("selectProject", id),
+    addProject: (path) => send("addProject", path),
+    removeProject: (id) => send("removeProject", id),
   };
   return source;
 }

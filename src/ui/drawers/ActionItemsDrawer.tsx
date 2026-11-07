@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ActionItem } from "../../data/types";
-import { officeActions, selectAttention, useOffice } from "../../store/office";
+import { selectAttention } from "../../data/attention";
+import { officeActions, useOffice } from "../../store/office";
 import { ui } from "../../store/ui";
 import { ago, Dot, SectionTitle, useNow } from "../kit";
 import { DrawerHeader } from "./Drawer";

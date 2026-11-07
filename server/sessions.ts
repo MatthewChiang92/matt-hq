@@ -663,9 +663,8 @@ export class Sessions {
   shutdown() {
     for (const p of this.shells.values()) p.kill();
     if (this.polling) clearInterval(this.polling);
-    // tmux keeps the agents running; the pty backend stops them.
+    // Only closes this project's views; main stops the backend once on quit (the pty backend's agents are shared).
     for (const t of this.terms.values()) t.close();
-    this.backend.shutdown();
     for (const p of this.fixes.values()) p.kill();
   }
 }

@@ -1,4 +1,4 @@
-# Getting started with JSM HQ
+# Getting started with Matt HQ
 
 This guide takes you from a fresh machine to a team of AI agents working on your repo. It takes about 15 minutes, most of it installing tools. You only do it once.
 
@@ -104,15 +104,16 @@ Tip: add a short `plan.md` (stack, features, phases) and push it before starting
 
 ## 6. Run HQ
 
-From your project's folder:
+Matt HQ isn't on npm. Install it from source once (see the [README](../README.md#quick-start)), then run:
 
 ```bash
-npx @therealjsmastery/jsm-hq@latest
+matt-hq
 ```
 
-`@latest` makes sure npx doesn't reuse an old version it cached. HQ opens your browser. If it doesn't, open the `http://127.0.0.1:7420/?token=…` link printed in the terminal.
+HQ opens your browser. If it doesn't, open the `http://127.0.0.1:7420/?token=…` link printed in the terminal.
 
-- **Welcome:** name the project, pick a lead and workers (Claude Code or Codex for each) and a review tool. Optionally pick your stack (frameworks, auth, payments, database, analytics, security): agents then get those tools' agent skills and know what the project uses. This is saved to `.jsmhq/config.json` in your repo.
+- **Add a project:** pick your repo from the list (repos in `~/code`), or type its path. Add more later from the project menu in the top bar.
+- **Welcome:** name the project, pick a lead and workers (Claude Code or Codex for each) and a review tool. Optionally pick your stack (frameworks, auth, payments, database, analytics, security): agents then get those tools' agent skills and know what the project uses. This is saved to `.matthq/config.json` in your repo.
 - **Setup checklist:** anything still missing shows here with a **Copy** button and, for safe commands, **Run in terminal**. Press **Check again** after fixing something.
 
 Leave the terminal running while you work. On macOS and Linux, agents keep running even if you close HQ; on Windows they stop with it (see [Windows](how-it-works.md#windows)).

@@ -83,14 +83,31 @@ export interface WorkflowConfig {
 }
 
 export interface ProjectConfig {
-  /** Fixed once created: names sandboxes, tmux sessions and ~/.jsmhq/<id>. Renaming the project never changes it. */
+  /** Fixed once created: names sandboxes, tmux sessions and ~/.matthq/<id>. Renaming the project never changes it. */
   id: string; // "askwell"
   name: string; // "Askwell"
-  repo: string; // "jsmastery-pro/askwell"
+  repo: string; // "acme/askwell"
   path: string; // "~/developer/askwell"
   hqPort: number; // port sandboxes use to reach HQ via host.docker.internal
   exportPlan?: boolean; // also write the plan to docs/plan.md
-  officeName?: string; // the sign on the office wall; empty = "JSM HQ"
+  officeName?: string; // the sign on the office wall; empty = "Matt HQ"
+}
+
+/** A project in HQ, as the project switcher shows it. */
+export interface ProjectSummary {
+  id: string;
+  name: string;
+  path: string;
+  /** Agents with a running session. */
+  running: number;
+  /** Everything waiting on you (see selectAttention). */
+  attention: number;
+}
+
+/** A git repo in your projects folder that isn't in HQ yet. */
+export interface ProjectCandidate {
+  name: string;
+  path: string;
 }
 
 export interface HqConfig {
