@@ -27,6 +27,7 @@ One HQ runs every project you've added. The list is saved in `~/.matthq/projects
 - **Add** with **+ Add project** in that menu: pick a repo from `~/code` (or `HQ_PROJECTS_DIR`), or type any path. A new project opens on the welcome screen.
 - **Remove** in Settings → Project. Stop its agents first. Its repo, agent folders and sandboxes are kept.
 - **T3 Code:** if you use T3 Code, each project lists your T3 Code chats in that repo under the team (running ones first, then ones from the last 3 days), with their PRs. Click one to open it in T3 Code. A chat waiting for your answer counts in Action items. HQ reads them with `t3 thread list` every 15 seconds and never changes them.
+- **Send to T3 Code:** an unassigned to-do task on a board has a **Send to T3 Code** button. It starts a T3 Code chat with the task's details in a new worktree off the default branch (branch `t3/<task id>`, same model as the project's newest chat), moves the task to Doing and links the chat on its card. The chat is asked to title its PR `[<task id>] …`, so HQ moves the task to Review and Done with the PR.
 - Each project has its own team, plan, PRs, sandboxes and tmux sessions. Agents in one project keep working while you look at another. Two projects can't share a project id (it names their sandboxes and folders).
 
 ## The team

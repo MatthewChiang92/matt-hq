@@ -69,12 +69,12 @@ export async function startProject(repo: RepoInfo, port: number, githubBudget: (
   void mcp.refresh();
   const planner = new Planner(hub, inbox);
   planner.actions = new ActionItems(hub, planner);
+  const t3 = new T3Threads(hub);
 
   sessions.startPolling();
   sbx.startApprovalPolling();
   const github = new GitHubSync(hub, planner, repo.github, githubBudget);
   github.start();
-  const t3 = new T3Threads(hub);
   t3.start();
 
   return {
@@ -83,7 +83,7 @@ export async function startProject(repo: RepoInfo, port: number, githubBudget: (
     inbox,
     planner,
     agentToken: token,
-    commands: makeCommands(hub, sessions, planner, inbox, sbx, mcp),
+    commands: makeCommands(hub, sessions, planner, inbox, sbx, mcp, t3),
     stop() {
       sessions.shutdown();
       sbx.stopApprovalPolling();

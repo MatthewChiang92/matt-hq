@@ -81,6 +81,8 @@ export interface OfficeDataSource {
   sendTerminalInput(agentId: string, data: string): void;
   resizeTerminal(agentId: string, cols: number, rows: number): void;
   assignTask(taskId: string, agentId: string): void;
+  /** Starts a T3 Code chat for a to-do task. */
+  sendTaskToT3(taskId: string): void;
   /** You → an agent, delivered like any Team MCP message. */
   sendMessage(toId: string, text: string): void;
 

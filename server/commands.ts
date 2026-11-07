@@ -12,6 +12,7 @@ import type { Inbox } from "./inbox";
 import type { Planner } from "./planner";
 import type { Sbx } from "./sbx";
 import type { SbxMcp } from "./sbxMcp";
+import type { T3Threads } from "./t3";
 import type { Sessions } from "./sessions";
 import { newAgent } from "./store";
 import { mergeByNotice } from "./githubSync";
@@ -45,7 +46,7 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(
 const str = (v: unknown, max = 2000) => (typeof v === "string" ? v.slice(0, max) : "");
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
 
-export function makeCommands(hub: Hub, sessions: Sessions, planner: Planner, inbox: Inbox, sbx: Sbx, mcp: SbxMcp) {
+export function makeCommands(hub: Hub, sessions: Sessions, planner: Planner, inbox: Inbox, sbx: Sbx, mcp: SbxMcp, t3: T3Threads) {
   /** Runs an sbx change and reports failures in the activity feed. */
   const attempt = async (agentId: string | null, what: string, fn: () => Promise<void>) => {
     try {
@@ -79,6 +80,17 @@ export function makeCommands(hub: Hub, sessions: Sessions, planner: Planner, inb
     // You → agent: same delivery path as the lead's assign_task / send_message.
     assignTask: (taskId, agentId) => planner.assign(str(taskId, 40), str(agentId, 80), "you"),
     sendMessage: (toId, text) => planner.message("you", str(toId, 80), str(text, 2000)),
+    sendTaskToT3: async (taskId) => {
+      const task = planner.task(str(taskId, 40));
+      if (!task || task.status !== "todo" || task.ownerId || task.t3) return;
+      try {
+        const chat = await t3.startTask(task);
+        planner.updateTask(task.id, { status: "in-progress", t3: chat });
+        hub.activity("task.started", null, `Sent ${task.id} to T3 Code`);
+      } catch (err) {
+        hub.activity("config", null, `Couldn't send ${task.id} to T3 Code: ${err instanceof Error ? err.message : err}`);
+      }
+    },
 
     addAgent: (raw) => {
       const input = (raw ?? {}) as Partial<NewAgentInput>;

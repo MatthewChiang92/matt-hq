@@ -193,6 +193,8 @@ export interface Task {
   files?: string[]; // the only files this task may edit
   doneWhen?: string; // acceptance criteria
   note?: string | null; // e.g. why it's blocked
+  /** Sent to T3 Code: the chat working on it. */
+  t3?: { id: string; link: string };
 }
 
 export type ReviewState = "pending" | "reviewing" | "changes-requested" | "passed";

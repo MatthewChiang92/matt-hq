@@ -15,7 +15,7 @@ export interface NewTask {
   needs?: string[];
 }
 
-export type TaskPatch = Partial<Pick<Task, "title" | "description" | "files" | "doneWhen" | "needs" | "status" | "boardId" | "note" | "prNumber">>;
+export type TaskPatch = Partial<Pick<Task, "title" | "description" | "files" | "doneWhen" | "needs" | "status" | "boardId" | "note" | "prNumber" | "t3">>;
 
 const now = () => new Date().toISOString();
 

@@ -198,6 +198,7 @@ export function createMockSource(): OfficeDataSource {
       // Everything is installed in the mock.
     },
 
+    sendTaskToT3() {},
     assignTask(taskId, agentId) {
       const task = world.task(taskId);
       const agent = world.cfg(agentId);

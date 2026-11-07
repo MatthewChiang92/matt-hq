@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { BoardStatus, Task, TaskStatus } from "../../data/types";
 import { officeActions, useOffice } from "../../store/office";
 import { ui, useUi } from "../../store/ui";
@@ -102,7 +102,11 @@ function TaskCard({ task }: { task: Task }) {
       </div>
       {task.status === "blocked" && task.note && <div className="text-[12px] text-red">{task.note}</div>}
       <div className="mt-1 flex items-center gap-1.5 text-[12px]">
-        {owner ? (
+        {task.t3 ? (
+          <a className="underline" href={task.t3.link} target="_blank" rel="noreferrer">
+            T3 Code ↗
+          </a>
+        ) : owner ? (
           <>
             <Dot color={owner.color} size={8} /> {owner.name}
           </>
@@ -111,6 +115,7 @@ function TaskCard({ task }: { task: Task }) {
         )}
       </div>
       {blockedBy.length > 0 && task.status === "todo" && <div className="text-[12px] text-red">Waits on {blockedBy.join(", ")}</div>}
+      {task.status === "todo" && !task.ownerId && !task.t3 && <SendToT3 taskId={task.id} />}
       {task.status === "todo" && (
         <select
           className="field mt-1 py-0 text-[12px]"
@@ -127,5 +132,27 @@ function TaskCard({ task }: { task: Task }) {
         </select>
       )}
     </div>
+  );
+}
+
+/** Hands the task to a new T3 Code chat in its own worktree. Stays disabled until the task moves (or a minute passes, if it failed). */
+function SendToT3({ taskId }: { taskId: string }) {
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!busy) return;
+    const t = window.setTimeout(() => setBusy(false), 60_000);
+    return () => window.clearTimeout(t);
+  }, [busy]);
+  return (
+    <button
+      className="btn mt-1 w-full py-0 text-[12px]"
+      disabled={busy}
+      onClick={() => {
+        setBusy(true);
+        officeActions.sendTaskToT3(taskId);
+      }}
+    >
+      {busy ? "Starting…" : "Send to T3 Code"}
+    </button>
   );
 }
