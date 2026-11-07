@@ -6,7 +6,7 @@ import { ProjectSwitcher } from "./ProjectSwitcher";
 
 const SPEEDS: SimSpeed[] = [1, 2, 4];
 
-function Logo() {
+export function Logo() {
   return (
     <svg className="h-[30px] w-[30px] shrink-0" viewBox="0 0 11 11" shapeRendering="crispEdges" aria-hidden>
       <rect x="1" y="1" width="9" height="9" fill="#241a2e" />
@@ -43,7 +43,13 @@ export function TopBar() {
   return (
     <header className="panel fixed left-4 right-4 top-[10px] z-[25] flex h-[50px] items-center gap-2.5 px-3">
       <div className="flex min-w-0 items-center gap-2.5">
-        <Logo />
+        {live ? (
+          <button className="shrink-0" aria-label="All projects" title="All projects" onClick={() => ui.openHome()}>
+            <Logo />
+          </button>
+        ) : (
+          <Logo />
+        )}
         <b className="hidden whitespace-nowrap text-[22px] font-bold tracking-[0.02em] 2xl:inline">Matt HQ</b>
         {!live && (
           <span className="chip shrink-0 text-[12px]" style={{ ["--c" as string]: "#ffec27" }} title="Running on mock data. Start the real HQ with `pnpm dev:hq`.">

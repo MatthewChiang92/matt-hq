@@ -22,6 +22,7 @@ What HQ does behind the office: where agents work, how they talk, what reaches G
 
 One HQ runs every project you've added. The list is saved in `~/.matthq/projects.json`, and each project starts when HQ starts.
 
+- **Home** shows every project at a glance: each agent's state and task, your running T3 Code chats, open PRs and what's waiting on you. It opens when HQ starts with two or more projects (a link to one project skips it). Open it any time with the logo or **All projects** in the project menu; click a card to go into that project. It fits a phone screen.
 - **Switch** from the project menu at the left of the top bar. A yellow badge on it counts what other projects are waiting on you.
 - **Add** with **+ Add project** in that menu: pick a repo from `~/code` (or `HQ_PROJECTS_DIR`), or type any path. A new project opens on the welcome screen.
 - **Remove** in Settings → Project. Stop its agents first. Its repo, agent folders and sandboxes are kept.

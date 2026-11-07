@@ -12,6 +12,7 @@ import { hqHome } from "./paths";
 import { projectId, startProject, type ProjectRuntime } from "./project";
 import { detectRepo } from "./repo";
 
+const T3_DONE = new Set(["completed", "failed", "interrupted", "cancelled", "idle"]);
 const HQ_BUDGET = 1200; // GraphQL points per hour HQ may use across all projects; the rest of the 5,000 is left for the agents' gh commands
 
 /** Where "Add project" looks for repos. */
@@ -88,12 +89,23 @@ export class Projects {
     return [...this.runtimes.values()]
       .map((rt) => {
         const s = rt.hub.snap;
+        const doing = (a: (typeof s.agents)[number]) => {
+          if (a.state === "needs-input") return a.note;
+          const task = a.currentTaskId ? s.tasks.find((t) => t.id === a.currentTaskId) : null;
+          return task ? `${task.id} ${task.title}` : null;
+        };
         return {
           id: rt.id,
           name: s.config.project.name,
           path: rt.hub.repo.root,
           running: s.agents.filter((a) => a.session.state === "running").length,
           attention: selectAttention(s).total,
+          agents: s.config.team.flatMap((c) => {
+            const a = s.agents.find((x) => x.agentId === c.id);
+            return a ? [{ id: c.id, name: c.name, color: c.color, lead: c.isLead, state: a.state, on: a.session.state === "running", doing: doing(a) }] : [];
+          }),
+          t3: (s.t3Threads ?? []).filter((t) => !T3_DONE.has(t.status)).map(({ id, title, status, link }) => ({ id, title, status, link })),
+          openPrs: s.pullRequests.filter((p) => !p.merged && !p.closed).length,
         };
       })
       .sort((a, b) => a.name.localeCompare(b.name));

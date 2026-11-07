@@ -40,6 +40,7 @@ interface UiState {
   drawerWidth: number;
   drawerMaximized: boolean;
   addProjectOpen: boolean;
+  homeOpen: boolean;
 }
 
 const WIDTH_KEY = "matthq.drawerWidth";
@@ -72,6 +73,7 @@ export const useUi = create<UiState>(() => ({
   drawerWidth: savedWidth(),
   drawerMaximized: false,
   addProjectOpen: false,
+  homeOpen: false,
 }));
 
 let nonce = 0;
@@ -146,6 +148,12 @@ export const ui = {
   },
   closeAddProject() {
     useUi.setState({ addProjectOpen: false });
+  },
+  openHome() {
+    useUi.setState({ homeOpen: true });
+  },
+  closeHome() {
+    useUi.setState({ homeOpen: false });
   },
   /** Another project is showing: close everything that pointed into the last one. */
   projectChanged() {

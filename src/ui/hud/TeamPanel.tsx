@@ -1,7 +1,7 @@
 import { CLI_LABEL, type T3Thread } from "../../data/types";
 import { selectTeam, useOffice, type AgentView } from "../../store/office";
 import { ui, useUi } from "../../store/ui";
-import { colors, stateStyle } from "../../theme/tokens";
+import { stateStyle, t3Style } from "../../theme/tokens";
 import { ago, Portrait, StateChip, useNow } from "../kit";
 
 function AgentCard({ a, focused, n, now }: { a: AgentView; focused: boolean; n: number; now: number }) {
@@ -58,15 +58,6 @@ function AgentCard({ a, focused, n, now }: { a: AgentView; focused: boolean; n: 
       </div>
     </button>
   );
-}
-
-/** T3 Code's run statuses, in the office's state colors. */
-function t3Style(status: string) {
-  if (status === "waiting") return { label: "Needs you", color: colors.red };
-  if (status === "completed") return { label: "Done", color: colors.green };
-  if (status === "failed") return { label: "Failed", color: colors.orange };
-  if (status === "interrupted" || status === "cancelled" || status === "idle") return { label: "Stopped", color: colors.lav };
-  return { label: "Working", color: colors.blue };
 }
 
 /** One of your T3 Code chats; opens it in T3 Code. */

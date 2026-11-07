@@ -77,6 +77,8 @@ function firstProject(): string | null {
 }
 
 const token = hqToken();
+/** Opened from a link to one project: skip the home page. */
+const linked = new URL(location.href).searchParams.has("project");
 const source: OfficeDataSource = token ? createWsSource(token, firstProject()) : createMockSource();
 
 export const useOffice = create<OfficeState>(() => ({
@@ -155,11 +157,18 @@ function reduce(snap: OfficeSnapshot, e: OfficeEvent): OfficeSnapshot {
 }
 
 function handle(e: OfficeEvent) {
-  if (e.type === "projects") return useOffice.setState({ projects: e.projects, candidates: e.candidates });
+  if (e.type === "projects") {
+    if (useOffice.getState().projects === null && e.projects.length > 1 && !linked) ui.openHome();
+    return useOffice.setState({ projects: e.projects, candidates: e.candidates });
+  }
   if (e.type === "project.error") return useOffice.setState({ projectError: e.text });
   if (e.type === "project.selected") {
-    if (e.id !== useOffice.getState().projectId) ui.projectChanged();
-    else ui.closeAddProject(); // added one that was already in HQ
+    const prev = useOffice.getState().projectId;
+    if (e.id !== prev) {
+      ui.projectChanged();
+      // Switched (or added one) from the home page: show it. The first one on load keeps home open.
+      if (prev) ui.closeHome();
+    } else ui.closeAddProject(); // added one that was already in HQ
     try {
       if (e.id) localStorage.setItem(PROJECT_KEY, e.id);
     } catch {

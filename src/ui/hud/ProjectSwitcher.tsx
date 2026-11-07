@@ -29,6 +29,15 @@ export function ProjectSwitcher() {
       </button>
       {open && (
         <div className="panel absolute left-0 top-[calc(100%+6px)] z-30 flex w-[340px] flex-col p-1.5" role="listbox" aria-label="Projects">
+          <button
+            className="px-2 py-1.5 text-left text-[15px] hover:bg-cream-2"
+            onClick={() => {
+              setOpen(false);
+              ui.openHome();
+            }}
+          >
+            All projects
+          </button>
           {projects.map((p) => (
             <button
               key={p.id}

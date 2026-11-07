@@ -74,3 +74,12 @@ export function shade(hex: string, amount: number): string {
   const b = ch(n & 255);
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
 }
+
+/** T3 Code's run statuses, in the office's state colors. */
+export function t3Style(status: string) {
+  if (status === "waiting") return { label: "Needs you", color: colors.red };
+  if (status === "completed") return { label: "Done", color: colors.green };
+  if (status === "failed") return { label: "Failed", color: colors.orange };
+  if (status === "interrupted" || status === "cancelled" || status === "idle") return { label: "Stopped", color: colors.lav };
+  return { label: "Working", color: colors.blue };
+}

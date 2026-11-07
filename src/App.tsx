@@ -9,6 +9,7 @@ import { ConnectionBanner } from "./ui/hud/ConnectionBanner";
 import { SetupChecklist } from "./ui/setup/SetupChecklist";
 import { WelcomeModal } from "./ui/setup/WelcomeModal";
 import { AddProjectModal } from "./ui/setup/AddProjectModal";
+import { HomePage } from "./ui/hud/HomePage";
 import { TeamPanel } from "./ui/hud/TeamPanel";
 import { Tooltip } from "./ui/hud/Tooltip";
 import { TopBar } from "./ui/hud/TopBar";
@@ -23,7 +24,11 @@ function useKeyboard() {
         if (e.key === "Escape" && el.closest(".xterm")) el.blur();
         return;
       }
-      const { settings, drawer, setupOpen } = useUi.getState();
+      const { settings, drawer, setupOpen, homeOpen } = useUi.getState();
+      if (homeOpen) {
+        if (e.key === "Escape" && useOffice.getState().projectId) ui.closeHome();
+        return;
+      }
       if (e.key === "Escape") {
         if (setupOpen) ui.closeSetup();
         else if (settings) ui.closeSettings();
@@ -70,6 +75,7 @@ export function App() {
   const welcome = useOffice((s) => s.live && !!s.snap?.welcome);
   const noProjects = useOffice((s) => s.projects !== null && s.projectId === null);
   const addProjectOpen = useUi((s) => s.addProjectOpen);
+  const home = useUi((s) => s.homeOpen) && !noProjects;
 
   return (
     <>
@@ -87,6 +93,7 @@ export function App() {
           <Tooltip />
         </>
       )}
+      {home && <HomePage />}
       {(noProjects || addProjectOpen) && <AddProjectModal required={noProjects} />}
     </>
   );

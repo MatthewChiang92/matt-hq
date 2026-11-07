@@ -12,7 +12,7 @@ Agents run **Claude Code** or **Codex**. Everything runs on your machine.
 
 ## Why use it
 
-- **All your projects in one place.** Add each repo once. Switch between them from the top bar; a badge shows when another project is waiting on you. Every project keeps its own team, plan and PRs, and their agents keep working while you look at another one.
+- **All your projects in one place.** Add each repo once. The home page shows every project's agents, T3 Code chats and what's waiting on you; switch between them from there or the top bar; a badge shows when another project is waiting on you. Every project keeps its own team, plan and PRs, and their agents keep working while you look at another one.
 - **A real team, not one chat.** The lead splits the work into small tasks (one task, one branch, one PR) and assigns them. Agents message each other through HQ.
 - **Safe by default.** Each agent works in its own Docker Sandbox, a small VM that can't touch the rest of your computer. Websites are blocked until you allow them.
 - **You stay in charge.** Anything an agent needs from you (a decision, an API key, a blocked website) shows up in **Action items**. HQ never merges for you.

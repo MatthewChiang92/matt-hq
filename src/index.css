@@ -61,6 +61,11 @@ html[data-font] .font-term {
     font-family: var(--font-ui);
     min-width: 1280px;
   }
+  /* The home page fits any screen, phones included; the office needs a wide one. */
+  body:has(.home-page) {
+    min-width: 0;
+    overflow: hidden;
+  }
 
   button {
     font: inherit;

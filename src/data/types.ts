@@ -115,6 +115,10 @@ export interface ProjectSummary {
   running: number;
   /** Everything waiting on you (see selectAttention). */
   attention: number;
+  agents: { id: string; name: string; color: string; lead: boolean; state: AgentState; on: boolean; doing: string | null }[];
+  /** T3 Code chats still going or waiting on you. */
+  t3: Pick<T3Thread, "id" | "title" | "status" | "link">[];
+  openPrs: number;
 }
 
 /** A git repo in your projects folder that isn't in HQ yet. */
