@@ -56,6 +56,7 @@ matt-hq --repo <path>   also add this git repo to HQ and open it
 ```
 
 `HQ_PROJECTS_DIR` changes where **Add project** looks for repos (default: `~/code`).
+`HQ_URL` lets HQ be opened from another address, for example a Tailscale serve URL (`tailscale serve --bg --https=8443 http://127.0.0.1:7420`, then `HQ_URL=https://<machine>.<tailnet>.ts.net:8443`). Only use an address that's private to you: anyone with the link can run commands on this machine.
 
 ## Requirements
 

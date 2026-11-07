@@ -4,6 +4,7 @@
 //
 // --repo: also add that git repo to HQ and open it.
 // --dev: the UI is served by Vite (pnpm dev:hq); HQ prints/opens the Vite URL.
+// HQ_URL: another address that serves HQ, like a Tailscale serve URL; HQ accepts it and prints its link.
 
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -38,7 +39,8 @@ async function main() {
   const root = dirname(dirname(fileURLToPath(import.meta.url)));
   const distDir = join(root, "dist");
   const uiPort = Number(process.env.HQ_UI_PORT ?? 5173);
-  const uiOrigin = dev ? `http://localhost:${uiPort}` : `http://127.0.0.1:${port}`;
+  const publicUrl = process.env.HQ_URL ? new URL(process.env.HQ_URL).origin : null;
+  const uiOrigin = dev ? `http://localhost:${uiPort}` : (publicUrl ?? `http://127.0.0.1:${port}`);
   if (!dev && !existsSync(join(distDir, "index.html"))) log.warn("No built UI found. Run `pnpm build` first, or use `pnpm dev:hq`.");
 
   await startHttp({
@@ -46,7 +48,7 @@ async function main() {
     port,
     browserToken: uiToken,
     distDir: dev ? null : distDir,
-    allowedOrigins: [uiOrigin, `http://127.0.0.1:${uiPort}`, `http://localhost:${port}`, `http://127.0.0.1:${port}`],
+    allowedOrigins: [uiOrigin, `http://127.0.0.1:${uiPort}`, `http://localhost:${port}`, `http://127.0.0.1:${port}`, ...(publicUrl ? [publicUrl] : [])],
   });
 
   const url = `${uiOrigin}/?token=${uiToken}${opened ? `&project=${encodeURIComponent(opened)}` : ""}`;
