@@ -61,8 +61,8 @@ html[data-font] .font-term {
     font-family: var(--font-ui);
     min-width: 1280px;
   }
-  /* The home page fits any screen, phones included; the office needs a wide one. */
-  body:has(.home-page) {
+  /* Home and the phone layout fit any screen; the office needs a wide one. */
+  body:has(.home-page, .phone-page) {
     min-width: 0;
     overflow: hidden;
   }

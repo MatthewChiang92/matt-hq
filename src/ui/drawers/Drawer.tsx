@@ -1,6 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { DRAWER_DEFAULT, ui, useUi } from "../../store/ui";
+import { useIsPhone } from "../kit";
 import { AgentDrawer } from "./AgentDrawer";
 import { BoardsDrawer } from "./BoardsDrawer";
 import { EnvironmentDrawer } from "./EnvironmentDrawer";
@@ -12,7 +13,7 @@ export function DrawerHeader({ children }: { children: ReactNode }) {
   return (
     <div className="flex items-center gap-2.5 border-b-[3px] border-ink px-3 py-2">
       <div className="flex min-w-0 flex-1 items-center gap-2.5">{children}</div>
-      <MaximizeButton />
+      {!useIsPhone() && <MaximizeButton />}
       <button className="btn px-2.5" aria-label="Close" onClick={() => ui.closeDrawer()}>
         ✕
       </button>
@@ -83,6 +84,7 @@ export function DrawerHost() {
   const drawer = useUi((s) => s.drawer);
   const reduce = useReducedMotion();
   const width = useUi((s) => s.drawerWidth);
+  const phone = useIsPhone();
   const maximized = useUi((s) => s.drawerMaximized);
   const key = drawer ? (drawer.kind === "agent" ? `agent:${drawer.id}` : drawer.kind === "env" ? `env:${drawer.name}` : drawer.kind) : null;
 
@@ -90,7 +92,7 @@ export function DrawerHost() {
   if (drawer?.kind === "boards")
     return (
       <div
-        className="fixed inset-0 z-30 grid place-items-center bg-[rgba(36,26,46,0.55)] p-4"
+        className={`fixed inset-0 z-30 grid place-items-center bg-[rgba(36,26,46,0.55)] ${phone ? "" : "p-4"}`}
         role="dialog"
         aria-modal="true"
         aria-label="Boards"
@@ -100,7 +102,7 @@ export function DrawerHost() {
           initial={reduce ? false : { y: -16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.2 }}
-          className="panel flex h-[90vh] w-[90vw] flex-col"
+          className={`panel flex flex-col ${phone ? "h-dvh w-screen" : "h-[90vh] w-[90vw]"}`}
         >
           <BoardsDrawer initialBoardId={drawer.boardId} />
         </motion.div>
@@ -116,11 +118,11 @@ export function DrawerHost() {
           animate={{ x: 0 }}
           exit={reduce ? { opacity: 0 } : { x: "110%" }}
           transition={{ duration: reduce ? 0 : 0.28, ease: [0.3, 0, 0.2, 1] }}
-          className={`panel fixed bottom-4 right-4 top-[74px] z-20 flex flex-col ${maximized ? "left-4" : ""}`}
-          style={maximized ? undefined : { width: `min(${width}px, calc(100vw - 32px))` }}
+          className={`panel fixed z-20 flex flex-col ${phone ? "inset-0" : `bottom-4 right-4 top-[74px] ${maximized ? "left-4" : ""}`}`}
+          style={maximized || phone ? undefined : { width: `min(${width}px, calc(100vw - 32px))` }}
           aria-label="Details"
         >
-          {!maximized && <ResizeHandle />}
+          {!maximized && !phone && <ResizeHandle />}
           {drawer.kind === "agent" && <AgentDrawer id={drawer.id} initialTab={drawer.tab} />}
           {drawer.kind === "prs" && <PrDrawer />}
           {drawer.kind === "actions" && <ActionItemsDrawer />}

@@ -90,6 +90,25 @@ export function startHttp(o: Options) {
       }
     }
 
+    // Lets a phone add HQ to its Home Screen: the icon opens HQ's link, token included.
+    if (url.pathname === "/manifest.webmanifest") {
+      const token = url.searchParams.get("token") ?? "";
+      if (!safeEqual(token, o.browserToken)) return send(res, 401, "unauthorized");
+      const manifest = {
+        name: "Matt HQ",
+        short_name: "Matt HQ",
+        start_url: `/?token=${token}`,
+        display: "standalone",
+        background_color: "#1d2b53",
+        theme_color: "#1d2b53",
+        icons: [
+          { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+        ],
+      };
+      return send(res, 200, JSON.stringify(manifest), "application/manifest+json");
+    }
+
     if (url.pathname === "/api/health") return send(res, 200, JSON.stringify({ ok: true }), "application/json");
 
     if (req.method === "GET" && o.distDir) {

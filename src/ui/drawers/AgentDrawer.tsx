@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { CLI_LABEL, HUMAN_ID, type AccessRequest, type AgentConfig, type AgentStatus, type OfficeSnapshot } from "../../data/types";
 import { officeActions, useOffice } from "../../store/office";
 import { ui, type AgentTab } from "../../store/ui";
-import { ago, Dot, Portrait, ReviewChip, SectionTitle, StateChip, Tabs, useNow } from "../kit";
+import { ago, Dot, Portrait, ReviewChip, SectionTitle, StateChip, Tabs, useIsPhone, useNow } from "../kit";
 import { DrawerHeader } from "./Drawer";
 import { PortBanner, PortsRow } from "./Ports";
 import { TerminalView } from "./TerminalView";
@@ -11,6 +11,7 @@ import { TerminalView } from "./TerminalView";
 export function AgentDrawer({ id, initialTab }: { id: string; initialTab?: AgentTab }) {
   const snap = useOffice((s) => s.snap);
   const [tab, setTab] = useState<AgentTab>(initialTab ?? "terminal");
+  const phone = useIsPhone();
   const agent = snap?.config.team.find((a) => a.id === id);
   const status = snap?.agents.find((a) => a.agentId === id);
   if (!snap || !agent || !status) {
@@ -68,7 +69,16 @@ export function AgentDrawer({ id, initialTab }: { id: string; initialTab?: Agent
       <div className="min-h-0 flex-1 overflow-hidden">
         {tab === "terminal" &&
           (status.session.state === "running" ? (
-            <TerminalView agentId={id} />
+            phone ? (
+              <div className="flex h-full flex-col">
+                <div className="min-h-0 flex-1">
+                  <TerminalView agentId={id} autoFocus={false} />
+                </div>
+                <PhoneKeys agentId={id} />
+              </div>
+            ) : (
+              <TerminalView agentId={id} />
+            )
           ) : (
             <NotRunning agent={agent} status={status} />
           ))}
@@ -78,6 +88,49 @@ export function AgentDrawer({ id, initialTab }: { id: string; initialTab?: Agent
         {tab === "messages" && <MessagesTab snap={snap} agent={agent} />}
       </div>
     </>
+  );
+}
+
+const KEYS: [string, string][] = [
+  ["1", "1"],
+  ["2", "2"],
+  ["3", "3"],
+  ["↑", "\x1b[A"],
+  ["↓", "\x1b[B"],
+  ["Esc", "\x1b"],
+  ["Enter", "\r"],
+];
+
+/** On a phone: keys for answering the agent's prompts, and a reply box. Typing straight into a terminal is unreliable on phone keyboards. */
+function PhoneKeys({ agentId }: { agentId: string }) {
+  const [text, setText] = useState("");
+  const send = (data: string) => officeActions.sendTerminalInput(agentId, data);
+  return (
+    <div className="flex flex-col gap-2 border-t-[3px] border-ink bg-cream-2 p-2">
+      <div className="grid grid-cols-7 gap-1">
+        {KEYS.map(([label, data]) => (
+          <button key={label} className="btn px-0 text-[14px]" onClick={() => send(data)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <form
+        className="flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!text.trim()) return;
+          send(text);
+          // A separate Enter, or the CLI may take it as part of a paste.
+          window.setTimeout(() => send("\r"), 150);
+          setText("");
+        }}
+      >
+        <input className="field min-w-0 flex-1 text-[16px]" placeholder="Reply" aria-label="Reply to the agent" value={text} onChange={(e) => setText(e.target.value)} />
+        <button className="btn" type="submit" disabled={!text.trim()}>
+          Send
+        </button>
+      </form>
+    </div>
   );
 }
 

@@ -24,7 +24,7 @@ Matt HQ is a local web app: a 2D pixel-art office where a person runs a team of 
 | Sandbox settings | Per agent: policy level, allowed/blocked domains, proxy, secret names                                |
 | Team MCP         | The MCP server HQ hosts. Agent ↔ agent messages and lead commands all pass through HQ                |
 
-**Confirmed backend fact:** a sandbox can reach HQ on the host via `host.docker.internal:<port>` once `sbx policy allow network` allows it. HQ will add that rule itself when it creates a sandbox, and every HQ endpoint requires a per-start token.
+**Confirmed backend fact:** a sandbox can reach HQ on the host via `host.docker.internal:<port>` once `sbx policy allow network` allows it. HQ will add that rule itself when it creates a sandbox, and every HQ endpoint requires a token.
 
 **Mock data:** two presets. **Askwell** (AI support chat widget): Michael (lead), Dwight and Jim (developers). **Big team**: 7 agents with mixed roles, used to test the layout.
 

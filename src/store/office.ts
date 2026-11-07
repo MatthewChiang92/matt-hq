@@ -77,6 +77,8 @@ function firstProject(): string | null {
 }
 
 const token = hqToken();
+// "Add to Home Screen" opens HQ's link, token included (see /manifest.webmanifest).
+if (token) document.head.append(Object.assign(document.createElement("link"), { rel: "manifest", href: `/manifest.webmanifest?token=${token}` }));
 /** Opened from a link to one project: skip the home page. */
 const linked = new URL(location.href).searchParams.has("project");
 const source: OfficeDataSource = token ? createWsSource(token, firstProject()) : createMockSource();

@@ -4,7 +4,7 @@ import { ui, useUi } from "../../store/ui";
 import { stateStyle, t3Style } from "../../theme/tokens";
 import { ago, Portrait, StateChip, useNow } from "../kit";
 
-function AgentCard({ a, focused, n, now }: { a: AgentView; focused: boolean; n: number; now: number }) {
+export function AgentCard({ a, focused, n, now }: { a: AgentView; focused: boolean; n?: number; now: number }) {
   const snap = useOffice((s) => s.snap);
   const task = a.status.currentTaskId ? snap?.tasks.find((t) => t.id === a.status.currentTaskId) : null;
   const st = stateStyle[a.status.state];
@@ -27,7 +27,7 @@ function AgentCard({ a, focused, n, now }: { a: AgentView; focused: boolean; n: 
         <span className="truncate text-[13px] text-muted">
           {a.config.role} · {CLI_LABEL[a.config.cli]}{a.config.model ? ` · ${a.config.model}` : ""}
         </span>
-        <span className="kbd ml-auto px-1 text-[13px] leading-none">{n}</span>
+        {n && <span className="kbd ml-auto px-1 text-[13px] leading-none">{n}</span>}
       </div>
       <div className="flex items-center gap-2">
         <StateChip state={a.status.state} />
@@ -61,7 +61,7 @@ function AgentCard({ a, focused, n, now }: { a: AgentView; focused: boolean; n: 
 }
 
 /** One of your T3 Code chats; opens it in T3 Code. */
-function T3Card({ t, now }: { t: T3Thread; now: number }) {
+export function T3Card({ t, now }: { t: T3Thread; now: number }) {
   const st = t3Style(t.status);
   const needs = t.status === "waiting";
   return (

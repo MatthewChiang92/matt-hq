@@ -58,6 +58,10 @@ matt-hq --repo <path>   also add this git repo to HQ and open it
 `HQ_PROJECTS_DIR` changes where **Add project** looks for repos (default: `~/code`).
 `HQ_URL` lets HQ be opened from another address, for example a Tailscale serve URL (`tailscale serve --bg --https=8443 http://127.0.0.1:7420`, then `HQ_URL=https://<machine>.<tailnet>.ts.net:8443`). Only use an address that's private to you: anyone with the link can run commands on this machine.
 
+HQ's link stays the same across restarts (the token is saved in `~/.matthq/browser-token`; delete that file to get a new link, which also logs out every browser and phone).
+
+**On a phone**, HQ shows each project as a list instead of the office: what's waiting on you, the team and your T3 Code chats. Panels open full screen, and an agent's terminal gets keys (1, 2, 3, arrows, Esc, Enter) and a reply box for answering its questions. In Safari, Share → **Add to Home Screen** to open HQ like an app.
+
 ## Requirements
 
 | What | Why |

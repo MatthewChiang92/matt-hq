@@ -10,6 +10,8 @@ import { SetupChecklist } from "./ui/setup/SetupChecklist";
 import { WelcomeModal } from "./ui/setup/WelcomeModal";
 import { AddProjectModal } from "./ui/setup/AddProjectModal";
 import { HomePage } from "./ui/hud/HomePage";
+import { PhoneProject } from "./ui/hud/PhoneProject";
+import { useIsPhone } from "./ui/kit";
 import { TeamPanel } from "./ui/hud/TeamPanel";
 import { Tooltip } from "./ui/hud/Tooltip";
 import { TopBar } from "./ui/hud/TopBar";
@@ -76,6 +78,26 @@ export function App() {
   const noProjects = useOffice((s) => s.projects !== null && s.projectId === null);
   const addProjectOpen = useUi((s) => s.addProjectOpen);
   const home = useUi((s) => s.homeOpen) && !noProjects;
+
+  const phone = useIsPhone();
+
+  // A phone gets lists and full-screen panels; the office needs a big screen.
+  if (phone)
+    return (
+      <>
+        <ConnectionBanner />
+        {ready && !home && (
+          <>
+            <PhoneProject />
+            <DrawerHost />
+            <SettingsModal />
+            {welcome && <WelcomeModal />}
+          </>
+        )}
+        {home && <HomePage />}
+        {(noProjects || addProjectOpen) && <AddProjectModal required={noProjects} />}
+      </>
+    );
 
   return (
     <>

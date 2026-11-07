@@ -27,7 +27,7 @@ async function main() {
   ensurePtyHelperExecutable();
   const dev = flag("dev");
   const port = Number(arg("port") ?? process.env.HQ_PORT ?? 7420);
-  const uiToken = browserToken(dev);
+  const uiToken = browserToken();
 
   log.info("starting projects…");
   const projects = new Projects(port);

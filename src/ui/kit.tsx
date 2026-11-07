@@ -77,6 +77,20 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { id: 
   );
 }
 
+const PHONE = "(max-width: 767px)";
+
+/** A phone-sized screen: HQ shows lists and full-screen panels instead of the office. */
+export function useIsPhone(): boolean {
+  const [phone, setPhone] = useState(() => window.matchMedia(PHONE).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(PHONE);
+    const on = () => setPhone(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return phone;
+}
+
 /** Re-renders every `ms` so relative times stay fresh. */
 export function useNow(ms = 1000): number {
   const [now, setNow] = useState(() => Date.now());

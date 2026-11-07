@@ -39,13 +39,12 @@ export function agentToken(projectSlug: string): string {
 }
 
 /**
- * Browser token, required by the UI's WebSocket. New on every start — except in
- * dev, where it survives server reloads so the open tab keeps working.
+ * Browser token, required by the UI's WebSocket. Kept in ~/.matthq/browser-token so HQ's link
+ * (and a phone's Home Screen icon) keeps working across restarts. Delete the file to get a new one.
  */
-export function browserToken(dev: boolean): string {
-  if (!dev) return randomBytes(24).toString("hex");
+export function browserToken(): string {
   mkdirSync(hqHome(), { recursive: true });
-  const file = join(hqHome(), "dev-browser-token");
+  const file = join(hqHome(), "browser-token");
   if (existsSync(file)) return readFileSync(file, "utf8").trim();
   const tok = randomBytes(24).toString("hex");
   writeFileSync(file, tok, { mode: 0o600 });
