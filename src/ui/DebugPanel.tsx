@@ -48,6 +48,7 @@ function summary(e: OfficeEvent): string {
     case "mcp.updated": return `${e.mcp.servers.length} MCP servers`;
     case "access.updated": return `${e.request.agentId} ${e.request.domain} ${e.request.status}`;
     case "t3.updated": return `${e.threads.length} T3 Code chats`;
+    case "t3.detail": return e.detail ? `${e.detail.title} ${e.detail.status}` : `${e.id} not shown`;
     case "projects": return `${e.projects.length} projects`;
     case "project.selected": return e.id ?? "none";
     case "project.error": return e.text;

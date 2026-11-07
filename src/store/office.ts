@@ -6,7 +6,7 @@ import { createMockSource } from "../data/mock/mockSource";
 import type { ConnectionStatus, DataPreset, OfficeDataSource, OfficeEvent, SimSpeed } from "../data/source";
 import { createWsSource } from "../data/ws/wsSource";
 import type { StackConfig } from "../data/stack";
-import type { AccessDecision, NewMcpServer, AgentConfig, AgentStatus, OfficeSnapshot, ProjectCandidate, ProjectSummary, RemoveAgentOptions, SetupCheckId, WelcomeInput, WorkspaceInfo } from "../data/types";
+import type { AccessDecision, NewMcpServer, AgentConfig, AgentStatus, OfficeSnapshot, ProjectCandidate, ProjectSummary, RemoveAgentOptions, SetupCheckId, T3ThreadDetail, WelcomeInput, WorkspaceInfo } from "../data/types";
 import { appendTerminal, clearTerminals } from "./terminal";
 import { ui } from "./ui";
 
@@ -25,6 +25,7 @@ interface OfficeState {
   presets: DataPreset[] | null;
   live: boolean; // connected to a real HQ server (vs. the demo mock)
   workspaceInfo: Record<string, WorkspaceInfo>; // answers to inspectWorkspace
+  t3Detail: Record<string, T3ThreadDetail | null>; // answers to showT3Thread
   connection: ConnectionStatus;
   source: OfficeDataSource;
   /** Every project in HQ; null until the server sends the list (and always on the demo). */
@@ -92,6 +93,7 @@ export const useOffice = create<OfficeState>(() => ({
   presets: source.dev?.presets ?? null,
   live: token !== null,
   workspaceInfo: {},
+  t3Detail: {},
   connection: "connecting",
   source,
   projects: null,
@@ -115,6 +117,7 @@ function reduce(snap: OfficeSnapshot, e: OfficeEvent): OfficeSnapshot {
     case "snapshot":
       return e.snapshot;
     case "workspace.info":
+    case "t3.detail":
       return snap;
     case "sbx.updated":
       return { ...snap, sbx: e.sbx };
@@ -188,6 +191,10 @@ function handle(e: OfficeEvent) {
     useOffice.setState((s) => ({ workspaceInfo: { ...s.workspaceInfo, [e.info.agentId]: e.info } }));
     return;
   }
+  if (e.type === "t3.detail") {
+    useOffice.setState((s) => ({ t3Detail: { ...s.t3Detail, [e.id]: e.detail } }));
+    return;
+  }
   if (e.type === "snapshot") clearTerminals();
   useOffice.setState((s) => {
     const base = s.snap ?? (e.type === "snapshot" ? e.snapshot : null);
@@ -231,6 +238,7 @@ export const officeActions = {
   runSetupFix: (id: SetupCheckId) => source.runSetupFix(id),
   assignTask: (taskId: string, agentId: string) => source.assignTask(taskId, agentId),
   sendTaskToT3: (taskId: string) => source.sendTaskToT3(taskId),
+  showT3Thread: (id: string) => source.showT3Thread(id),
   sendMessage: (toId: string, text: string) => source.sendMessage(toId, text),
   addAgent: source.addAgent.bind(source),
   updateAgent: source.updateAgent.bind(source),

@@ -41,6 +41,8 @@ interface UiState {
   drawerMaximized: boolean;
   addProjectOpen: boolean;
   homeOpen: boolean;
+  /** The T3 Code chat whose status modal is open. */
+  t3Open: string | null;
 }
 
 const WIDTH_KEY = "matthq.drawerWidth";
@@ -74,6 +76,7 @@ export const useUi = create<UiState>(() => ({
   drawerMaximized: false,
   addProjectOpen: false,
   homeOpen: false,
+  t3Open: null,
 }));
 
 let nonce = 0;
@@ -104,6 +107,12 @@ export const ui = {
   openEnv(name: string) {
     useUi.setState({ drawer: { kind: "env", name } });
     ui.focus({ kind: "env", name });
+  },
+  openT3(id: string) {
+    useUi.setState({ t3Open: id });
+  },
+  closeT3() {
+    useUi.setState({ t3Open: null });
   },
   closeDrawer() {
     useUi.setState({ drawer: null });

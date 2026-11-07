@@ -80,6 +80,10 @@ export function makeCommands(hub: Hub, sessions: Sessions, planner: Planner, inb
     // You → agent: same delivery path as the lead's assign_task / send_message.
     assignTask: (taskId, agentId) => planner.assign(str(taskId, 40), str(agentId, 80), "you"),
     sendMessage: (toId, text) => planner.message("you", str(toId, 80), str(text, 2000)),
+    showT3Thread: async (id) => {
+      const threadId = str(id, 200);
+      hub.emit({ type: "t3.detail", id: threadId, detail: await t3.show(threadId) });
+    },
     sendTaskToT3: async (taskId) => {
       const task = planner.task(str(taskId, 40));
       if (!task || task.status !== "todo" || task.ownerId || task.t3) return;

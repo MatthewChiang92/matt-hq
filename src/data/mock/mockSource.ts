@@ -199,6 +199,9 @@ export function createMockSource(): OfficeDataSource {
     },
 
     sendTaskToT3() {},
+    showT3Thread(id) {
+      listener?.({ type: "t3.detail", id, detail: null });
+    },
     assignTask(taskId, agentId) {
       const task = world.task(taskId);
       const agent = world.cfg(agentId);

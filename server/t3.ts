@@ -1,7 +1,7 @@
 // Your T3 Code chats in this project, read with T3 Code's own CLI (`t3 thread list --json`),
 // and board tasks sent to T3 Code (`t3 thread start`).
 
-import type { T3Thread, Task } from "../src/data/types";
+import type { T3Thread, T3ThreadDetail, Task } from "../src/data/types";
 import type { Hub } from "./hub";
 import { run } from "./lib/exec";
 import { log } from "./lib/log";
@@ -25,6 +25,16 @@ interface RawThread {
   updatedAt: string;
   pullRequests?: { number: number; url: string; state: string }[];
 }
+
+const toThread = (t: RawThread): T3Thread => ({
+  id: t.threadId,
+  title: t.title,
+  status: t.status,
+  model: t.model,
+  link: t.link,
+  updatedAt: t.updatedAt,
+  pullRequests: (t.pullRequests ?? []).map((p) => ({ number: p.number, url: p.url, state: p.state })),
+});
 
 export class T3Threads {
   private timer: NodeJS.Timeout | null = null;
@@ -71,6 +81,22 @@ export class T3Threads {
     return { id: thread.threadId, link: thread.link };
   }
 
+  /** A chat's status and latest messages; null when T3 Code can't show it. */
+  async show(id: string): Promise<T3ThreadDetail | null> {
+    const r = await run("t3", ["thread", "show", id, "--messages", "8", "--json"], { timeoutMs: 10_000 });
+    if (!r.ok) return null;
+    const { thread, messages } = JSON.parse(r.stdout) as {
+      thread: RawThread & { branch: string | null; pendingRequestCount: number };
+      messages: { role: string; text: string }[];
+    };
+    return {
+      ...toThread(thread),
+      branch: thread.branch,
+      pending: thread.pendingRequestCount,
+      messages: messages.map((m) => ({ role: m.role, text: m.text.slice(0, 4000) })),
+    };
+  }
+
   private async list(): Promise<RawThread[]> {
     const r = await run("t3", ["thread", "list", "--project", this.hub.repo.root, "--json"], { timeoutMs: 10_000 });
     return r.ok ? (JSON.parse(r.stdout) as RawThread[]) : []; // T3 Code isn't installed or running: nothing to show
@@ -82,15 +108,7 @@ export class T3Threads {
       .filter((t) => !t.settled && !t.snoozed && (ACTIVE.has(t.status) || now - Date.parse(t.updatedAt) < RECENT_MS))
       .sort((a, b) => Number(ACTIVE.has(b.status)) - Number(ACTIVE.has(a.status)) || b.updatedAt.localeCompare(a.updatedAt))
       .slice(0, MAX)
-      .map((t) => ({
-        id: t.threadId,
-        title: t.title,
-        status: t.status,
-        model: t.model,
-        link: t.link,
-        updatedAt: t.updatedAt,
-        pullRequests: (t.pullRequests ?? []).map((p) => ({ number: p.number, url: p.url, state: p.state })),
-      }));
+      .map(toThread);
     const json = JSON.stringify(threads);
     if (json === this.last) return;
     this.last = json;

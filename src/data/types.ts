@@ -106,6 +106,15 @@ export interface T3Thread {
   pullRequests: { number: number; url: string; state: string }[];
 }
 
+/** One T3 Code chat in detail (read from `t3 thread show`). Answer to `showT3Thread`. */
+export interface T3ThreadDetail extends T3Thread {
+  branch: string | null;
+  /** Questions or approvals waiting for you in T3 Code. */
+  pending: number;
+  /** The latest messages, oldest first. */
+  messages: { role: string; text: string }[];
+}
+
 /** A project in HQ, as the project switcher shows it. */
 export interface ProjectSummary {
   id: string;

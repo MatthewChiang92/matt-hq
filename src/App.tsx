@@ -16,6 +16,7 @@ import { TeamPanel } from "./ui/hud/TeamPanel";
 import { Tooltip } from "./ui/hud/Tooltip";
 import { TopBar } from "./ui/hud/TopBar";
 import { SettingsModal } from "./ui/settings/SettingsModal";
+import { T3ChatModal } from "./ui/hud/T3ChatModal";
 
 function useKeyboard() {
   useEffect(() => {
@@ -26,18 +27,19 @@ function useKeyboard() {
         if (e.key === "Escape" && el.closest(".xterm")) el.blur();
         return;
       }
-      const { settings, drawer, setupOpen, homeOpen } = useUi.getState();
+      const { settings, drawer, setupOpen, homeOpen, t3Open } = useUi.getState();
       if (homeOpen) {
         if (e.key === "Escape" && useOffice.getState().projectId) ui.closeHome();
         return;
       }
       if (e.key === "Escape") {
-        if (setupOpen) ui.closeSetup();
+        if (t3Open) ui.closeT3();
+        else if (setupOpen) ui.closeSetup();
         else if (settings) ui.closeSettings();
         else if (drawer) ui.closeDrawer();
         return;
       }
-      if (settings || setupOpen) return;
+      if (settings || setupOpen || t3Open) return;
       let handled = true;
       if (e.key === "d" || e.key === "D") ui.toggleDebug();
       else if (e.key === "+" || e.key === "=") ui.zoom(1);
@@ -91,6 +93,7 @@ export function App() {
             <PhoneProject />
             <DrawerHost />
             <SettingsModal />
+            <T3ChatModal />
             {welcome && <WelcomeModal />}
           </>
         )}
@@ -111,6 +114,7 @@ export function App() {
           <DrawerHost />
           <DebugPanel />
           <SettingsModal />
+          <T3ChatModal />
           {welcome ? <WelcomeModal /> : setupOpen && <SetupChecklist />}
           <Tooltip />
         </>

@@ -71,6 +71,7 @@ export function createWsSource(token: string, project: string | null): OfficeDat
     resizeTerminal: (id, cols, rows) => send("resizeTerminal", id, cols, rows),
     assignTask: (taskId, agentId) => send("assignTask", taskId, agentId),
     sendTaskToT3: (taskId) => send("sendTaskToT3", taskId),
+    showT3Thread: (id) => send("showT3Thread", id),
     sendMessage: (toId, text) => send("sendMessage", toId, text),
     startAgent: (id) => send("startAgent", id),
     stopAgent: (id) => send("stopAgent", id),

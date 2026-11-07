@@ -23,6 +23,7 @@ import type {
   ProjectConfig,
   ProjectCandidate,
   T3Thread,
+  T3ThreadDetail,
   ProjectSummary,
   PullRequest,
   SandboxSettings,
@@ -51,6 +52,8 @@ export type OfficeEvent =
   | { type: "mcp.updated"; mcp: McpState }
   | { type: "action.updated"; item: ActionItem }
   | { type: "t3.updated"; threads: T3Thread[] }
+  /** Answer to `showT3Thread`; null when T3 Code couldn't show the chat. */
+  | { type: "t3.detail"; id: string; detail: T3ThreadDetail | null }
   // HQ-wide, not about one project:
   | { type: "projects"; projects: ProjectSummary[]; candidates: ProjectCandidate[] }
   /** The project this browser now shows (null: none in HQ yet). Its snapshot follows. */
@@ -83,6 +86,8 @@ export interface OfficeDataSource {
   assignTask(taskId: string, agentId: string): void;
   /** Starts a T3 Code chat for a to-do task. */
   sendTaskToT3(taskId: string): void;
+  /** Asks for a T3 Code chat's status; answered with a `t3.detail` event. */
+  showT3Thread(id: string): void;
   /** You → an agent, delivered like any Team MCP message. */
   sendMessage(toId: string, text: string): void;
 
