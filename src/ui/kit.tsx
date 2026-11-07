@@ -91,6 +91,12 @@ export function useIsPhone(): boolean {
   return phone;
 }
 
+/** Link props for a T3 Code chat: opens the T3 Code app on a computer, the web app (app.t3.codes) on a phone. */
+export function useT3Link(): (link: string) => { href: string; target?: string; rel?: string } {
+  const phone = useIsPhone();
+  return (link) => (phone ? { href: link, target: "_blank", rel: "noreferrer" } : { href: link.replace("https://app.t3.codes/threads/", "t3code://threads/") });
+}
+
 /** Re-renders every `ms` so relative times stay fresh. */
 export function useNow(ms = 1000): number {
   const [now, setNow] = useState(() => Date.now());

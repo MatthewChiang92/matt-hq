@@ -2,7 +2,7 @@ import { CLI_LABEL, type T3Thread } from "../../data/types";
 import { selectTeam, useOffice, type AgentView } from "../../store/office";
 import { ui, useUi } from "../../store/ui";
 import { stateStyle, t3Style } from "../../theme/tokens";
-import { ago, Portrait, StateChip, useNow } from "../kit";
+import { ago, Portrait, StateChip, useNow, useT3Link } from "../kit";
 
 export function AgentCard({ a, focused, n, now }: { a: AgentView; focused: boolean; n?: number; now: number }) {
   const snap = useOffice((s) => s.snap);
@@ -64,11 +64,10 @@ export function AgentCard({ a, focused, n, now }: { a: AgentView; focused: boole
 export function T3Card({ t, now }: { t: T3Thread; now: number }) {
   const st = t3Style(t.status);
   const needs = t.status === "waiting";
+  const t3Link = useT3Link();
   return (
     <a
-      href={t.link}
-      target="_blank"
-      rel="noreferrer"
+      {...t3Link(t.link)}
       className={`panel flex flex-col gap-1 px-2.5 py-2 transition-transform hover:-translate-x-px hover:-translate-y-px ${needs ? "outline-[3px] outline-red" : ""}`}
       style={needs ? { outlineStyle: "solid" } : undefined}
       title="Open in T3 Code"

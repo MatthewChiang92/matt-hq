@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { BoardStatus, Task, TaskStatus } from "../../data/types";
 import { officeActions, useOffice } from "../../store/office";
 import { ui, useUi } from "../../store/ui";
-import { Dot } from "../kit";
+import { Dot, useT3Link } from "../kit";
 import { DrawerHeader } from "./Drawer";
 
 const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
@@ -85,6 +85,7 @@ export function BoardsDrawer({ initialBoardId }: { initialBoardId?: string }) {
 
 function TaskCard({ task }: { task: Task }) {
   const snap = useOffice((s) => s.snap);
+  const t3Link = useT3Link();
   const owner = snap?.config.team.find((a) => a.id === task.ownerId);
   const workers = snap?.config.team.filter((a) => !a.isLead) ?? [];
   const blockedBy = task.needs.filter((n) => snap?.tasks.find((t) => t.id === n)?.status !== "done");
@@ -103,7 +104,7 @@ function TaskCard({ task }: { task: Task }) {
       {task.status === "blocked" && task.note && <div className="text-[12px] text-red">{task.note}</div>}
       <div className="mt-1 flex items-center gap-1.5 text-[12px]">
         {task.t3 ? (
-          <a className="underline" href={task.t3.link} target="_blank" rel="noreferrer">
+          <a className="underline" {...t3Link(task.t3.link)}>
             T3 Code ↗
           </a>
         ) : owner ? (

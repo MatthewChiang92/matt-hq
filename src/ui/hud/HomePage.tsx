@@ -2,7 +2,7 @@ import type { ProjectSummary } from "../../data/types";
 import { officeActions, useOffice } from "../../store/office";
 import { ui } from "../../store/ui";
 import { t3Style } from "../../theme/tokens";
-import { Portrait, StateChip } from "../kit";
+import { Portrait, StateChip, useT3Link } from "../kit";
 import { Logo } from "./TopBar";
 
 function open(id: string) {
@@ -11,6 +11,7 @@ function open(id: string) {
 }
 
 function ProjectCard({ p, current }: { p: ProjectSummary; current: boolean }) {
+  const t3Link = useT3Link();
   return (
     <article
       className={`panel relative flex min-w-0 flex-col gap-2 p-3 transition-transform hover:-translate-x-px hover:-translate-y-px ${p.attention ? "outline-[3px] outline-yellow" : ""}`}
@@ -40,7 +41,7 @@ function ProjectCard({ p, current }: { p: ProjectSummary; current: boolean }) {
           {p.t3.map((t) => {
             const st = t3Style(t.status);
             return (
-              <a key={t.id} href={t.link} target="_blank" rel="noreferrer" className="relative flex min-w-0 items-center gap-2 hover:underline" title="Open in T3 Code">
+              <a key={t.id} {...t3Link(t.link)} className="relative flex min-w-0 items-center gap-2 hover:underline" title="Open in T3 Code">
                 <span className={`chip chip-dot shrink-0 ${t.status === "waiting" ? "blink" : ""}`} style={{ ["--c" as string]: st.color }}>
                   {st.label}
                 </span>

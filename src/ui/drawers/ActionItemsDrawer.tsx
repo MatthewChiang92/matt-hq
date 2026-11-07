@@ -3,12 +3,13 @@ import type { ActionItem } from "../../data/types";
 import { selectAttention } from "../../data/attention";
 import { officeActions, useOffice } from "../../store/office";
 import { ui } from "../../store/ui";
-import { ago, Dot, SectionTitle, useNow } from "../kit";
+import { ago, Dot, SectionTitle, useNow, useT3Link } from "../kit";
 import { DrawerHeader } from "./Drawer";
 
 /** Everything waiting on the user: agents' action items first, then the other things that need them. */
 export function ActionItemsDrawer() {
   const snap = useOffice((s) => s.snap);
+  const t3Link = useT3Link();
   const now = useNow(10_000);
   const [showClosed, setShowClosed] = useState(false);
   if (!snap) return null;
@@ -63,7 +64,7 @@ export function ActionItemsDrawer() {
                   <span className="flex-1">
                     T3 Code chat <b>{t.title}</b> is waiting for your answer
                   </span>
-                  <a className="btn px-2 text-[12px]" href={t.link} target="_blank" rel="noreferrer">
+                  <a className="btn px-2 text-[12px]" {...t3Link(t.link)}>
                     Open ↗
                   </a>
                 </li>
