@@ -22,6 +22,7 @@ import type {
   WorkspaceInfo,
   ProjectConfig,
   ProjectCandidate,
+  T3Thread,
   ProjectSummary,
   PullRequest,
   SandboxSettings,
@@ -49,6 +50,7 @@ export type OfficeEvent =
   | { type: "access.updated"; request: AccessRequest }
   | { type: "mcp.updated"; mcp: McpState }
   | { type: "action.updated"; item: ActionItem }
+  | { type: "t3.updated"; threads: T3Thread[] }
   // HQ-wide, not about one project:
   | { type: "projects"; projects: ProjectSummary[]; candidates: ProjectCandidate[] }
   /** The project this browser now shows (null: none in HQ yet). Its snapshot follows. */

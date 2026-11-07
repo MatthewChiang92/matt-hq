@@ -20,7 +20,7 @@ export function ActionItemsDrawer() {
     .slice(0, 20);
   // Waiting items first, then oldest first (what's been waiting longest).
   const open = [...a.items].sort((x, y) => Number(y.waiting) - Number(x.waiting) || x.at.localeCompare(y.at));
-  const others = a.asking.length + a.access.length + a.blocked.length + a.readyPrs.length;
+  const others = a.asking.length + a.access.length + a.blocked.length + a.readyPrs.length + a.t3.length;
 
   return (
     <>
@@ -57,6 +57,16 @@ export function ActionItemsDrawer() {
                   text={`${agent(b.agentId)?.name ?? b.agentId}'s sandbox blocked ${b.count} request${b.count === 1 ? "" : "s"}`}
                   onOpen={() => ui.openAgent(b.agentId)}
                 />
+              ))}
+              {a.t3.map((t) => (
+                <li key={`t3-${t.id}`} className="flex items-center gap-2 border-[3px] border-ink bg-white px-2.5 py-1.5">
+                  <span className="flex-1">
+                    T3 Code chat <b>{t.title}</b> is waiting for your answer
+                  </span>
+                  <a className="btn px-2 text-[12px]" href={t.link} target="_blank" rel="noreferrer">
+                    Open ↗
+                  </a>
+                </li>
               ))}
               {a.readyPrs.map((p) =>
                 p.url ? (

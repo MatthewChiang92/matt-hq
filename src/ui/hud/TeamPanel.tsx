@@ -1,7 +1,7 @@
-import { CLI_LABEL } from "../../data/types";
+import { CLI_LABEL, type T3Thread } from "../../data/types";
 import { selectTeam, useOffice, type AgentView } from "../../store/office";
 import { ui, useUi } from "../../store/ui";
-import { stateStyle } from "../../theme/tokens";
+import { colors, stateStyle } from "../../theme/tokens";
 import { ago, Portrait, StateChip, useNow } from "../kit";
 
 function AgentCard({ a, focused, n, now }: { a: AgentView; focused: boolean; n: number; now: number }) {
@@ -60,12 +60,56 @@ function AgentCard({ a, focused, n, now }: { a: AgentView; focused: boolean; n: 
   );
 }
 
+/** T3 Code's run statuses, in the office's state colors. */
+function t3Style(status: string) {
+  if (status === "waiting") return { label: "Needs you", color: colors.red };
+  if (status === "completed") return { label: "Done", color: colors.green };
+  if (status === "failed") return { label: "Failed", color: colors.orange };
+  if (status === "interrupted" || status === "cancelled" || status === "idle") return { label: "Stopped", color: colors.lav };
+  return { label: "Working", color: colors.blue };
+}
+
+/** One of your T3 Code chats; opens it in T3 Code. */
+function T3Card({ t, now }: { t: T3Thread; now: number }) {
+  const st = t3Style(t.status);
+  const needs = t.status === "waiting";
+  return (
+    <a
+      href={t.link}
+      target="_blank"
+      rel="noreferrer"
+      className={`panel flex flex-col gap-1 px-2.5 py-2 transition-transform hover:-translate-x-px hover:-translate-y-px ${needs ? "outline-[3px] outline-red" : ""}`}
+      style={needs ? { outlineStyle: "solid" } : undefined}
+      title="Open in T3 Code"
+    >
+      <b className="truncate text-[15px]">{t.title}</b>
+      <div className="flex items-center gap-2">
+        <span className={`chip chip-dot ${needs ? "blink" : ""}`} style={{ ["--c" as string]: st.color }}>
+          {st.label}
+        </span>
+        <span className="font-term text-[16px] text-muted">{ago(t.updatedAt, now)}</span>
+        <span className="truncate text-[12px] text-muted">{t.model}</span>
+      </div>
+      {t.pullRequests.length > 0 && (
+        <div className="flex flex-wrap gap-1 text-[12px]">
+          {t.pullRequests.slice(0, 4).map((p) => (
+            <span key={p.number} className="chip text-[11px]">
+              #{p.number} {p.state}
+            </span>
+          ))}
+        </div>
+      )}
+    </a>
+  );
+}
+
 export function TeamPanel() {
   const snap = useOffice((s) => s.snap);
   const drawer = useUi((s) => s.drawer);
   const now = useNow(1000);
   const team = selectTeam(snap);
   const needs = team.filter((a) => a.status.state === "needs-input").length;
+  const t3 = snap?.t3Threads ?? [];
 
   return (
     <section aria-label="Team" className="fixed bottom-[250px] left-4 top-[74px] z-10 flex w-[280px] flex-col gap-2">
@@ -82,6 +126,14 @@ export function TeamPanel() {
         {team.map((a, i) => (
           <AgentCard key={a.config.id} a={a} n={i + 1} now={now} focused={drawer?.kind === "agent" && drawer.id === a.config.id} />
         ))}
+        {t3.length > 0 && (
+          <>
+            <div className="mt-2 px-1 text-[13px] font-semibold uppercase tracking-[0.12em] text-cream [text-shadow:0_2px_0_#241a2e]">T3 Code · {t3.length}</div>
+            {t3.map((t) => (
+              <T3Card key={t.id} t={t} now={now} />
+            ))}
+          </>
+        )}
       </div>
     </section>
   );

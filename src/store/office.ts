@@ -147,6 +147,8 @@ function reduce(snap: OfficeSnapshot, e: OfficeEvent): OfficeSnapshot {
       return { ...snap, actionItems: upsert(snap.actionItems ?? [], e.item, (i) => i.id === e.item.id) };
     case "mcp.updated":
       return { ...snap, mcp: e.mcp };
+    case "t3.updated":
+      return { ...snap, t3Threads: e.threads };
     case "access.updated":
       return { ...snap, accessRequests: upsert(snap.accessRequests ?? [], e.request, (r) => r.id === e.request.id) };
   }

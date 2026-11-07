@@ -14,6 +14,7 @@ import { log } from "./lib/log";
 import { agentToken } from "./paths";
 import type { RepoInfo } from "./repo";
 import { Sessions } from "./sessions";
+import { T3Threads } from "./t3";
 import { runSetupChecks } from "./setup";
 import { loadConfig, loadPlan } from "./store";
 
@@ -73,6 +74,8 @@ export async function startProject(repo: RepoInfo, port: number, githubBudget: (
   sbx.startApprovalPolling();
   const github = new GitHubSync(hub, planner, repo.github, githubBudget);
   github.start();
+  const t3 = new T3Threads(hub);
+  t3.start();
 
   return {
     id: slug,
@@ -86,6 +89,7 @@ export async function startProject(repo: RepoInfo, port: number, githubBudget: (
       sbx.stopApprovalPolling();
       inbox.stop();
       github.stop();
+      t3.stop();
     },
   };
 }

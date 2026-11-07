@@ -93,6 +93,19 @@ export interface ProjectConfig {
   officeName?: string; // the sign on the office wall; empty = "Matt HQ"
 }
 
+/** One of your T3 Code chats in this project (read from `t3 thread list`). */
+export interface T3Thread {
+  id: string;
+  title: string;
+  /** T3 Code's run status: preparing, queued, starting, running, waiting (on you), completed, interrupted, failed… */
+  status: string;
+  model: string;
+  /** Opens the chat in T3 Code. */
+  link: string;
+  updatedAt: string;
+  pullRequests: { number: number; url: string; state: string }[];
+}
+
 /** A project in HQ, as the project switcher shows it. */
 export interface ProjectSummary {
   id: string;
@@ -360,6 +373,8 @@ export interface OfficeSnapshot {
   accessRequests?: AccessRequest[];
   mcp?: McpState;
   actionItems?: ActionItem[];
+  /** Your T3 Code chats in this project: running ones first, then ones from the last few days. */
+  t3Threads?: T3Thread[];
 }
 
 /** Something an agent needs the user to do outside its sandbox (Team MCP `ask_user`). */
